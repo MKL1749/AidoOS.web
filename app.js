@@ -1,46 +1,26 @@
 /* =====================================================
-   AIDOS
-   AidoOS / AidoPC
+   AidoOS 0.1.0 Beta — Web Edition
+   app.js limpio para AidoOS / AidoPC
 ===================================================== */
 
-
-/* =====================================================
-   ESTADO
-===================================================== *aapp.js
-↓
-Ctrl + A
-↓
-borrar
-↓
-pegar el nuevo
-↓
-Commit changes
-
 const state = {
-
   windows: new Map(),
-
   zIndex: 50,
-
   windowNumber: 0,
-
   currentDesktop: 1,
 
-  installations:
-    JSON.parse(
-      localStorage.getItem(
-        "aido_installations"
-      ) || "{}"
-    ),
+  installations: loadJSON("aido_installations", {}),
+  installTimers: new Map(),
 
-  recent: [],
+  recent: loadJSON("aido_recent", []),
 
   desktops: {
     1: [],
     2: [],
     3: []
-  }
+  },
 
+  storeCategory: "Todos"
 };
 
 
@@ -132,279 +112,611 @@ const apps = {
 
 
 /* =====================================================
-   INICIO
+   APLICACIONES DE AIDOSTORE
+===================================================== */
+
+const storeApps = [
+
+  {
+    id: "aido-games",
+    name: "AidoGames",
+    icon: "🎮",
+    category: "Juegos",
+    size: "245 MB",
+    description: "Centro de juegos de AidoOS.",
+    target: "games"
+  },
+
+  {
+    id: "aido-music",
+    name: "AidoMusic",
+    icon: "🎵",
+    category: "Música",
+    size: "85 MB",
+    description: "Reproductor musical para tu biblioteca.",
+    target: "music"
+  },
+
+  {
+    id: "aido-office",
+    name: "AidoOffice",
+    icon: "📘",
+    category: "Trabajo",
+    size: "380 MB",
+    description: "Documentos, hojas y presentaciones.",
+    target: "office"
+  },
+
+  {
+    id: "aido-paint",
+    name: "Aido Paint",
+    icon: "🎨",
+    category: "Herramientas",
+    size: "72 MB",
+    description: "Dibuja y crea imágenes.",
+    target: "paint"
+  },
+
+  {
+    id: "aido-notes",
+    name: "Notas",
+    icon: "📝",
+    category: "Trabajo",
+    size: "18 MB",
+    description: "Escribe y guarda tus notas.",
+    target: "notes"
+  },
+
+  {
+    id: "aido-racing",
+    name: "Aido Racing",
+    icon: "🏎️",
+    category: "Juegos",
+    size: "620 MB",
+    description: "Carreras arcade de Aido Games.",
+    target: "games"
+  },
+
+  {
+    id: "blockworld",
+    name: "BlockWorld",
+    icon: "🧱",
+    category: "Juegos",
+    size: "410 MB",
+    description: "Sandbox de construcción original.",
+    target: "games"
+  },
+
+  {
+    id: "aido-space",
+    name: "Aido Space",
+    icon: "🚀",
+    category: "Juegos",
+    size: "330 MB",
+    description: "Explora el espacio.",
+    target: "games"
+  },
+
+  {
+    id: "aido-weather",
+    name: "Aido Weather",
+    icon: "🌤️",
+    category: "Herramientas",
+    size: "45 MB",
+    description: "Clima para tu escritorio.",
+    target: "settings"
+  },
+
+  {
+    id: "aido-calculator",
+    name: "Calculadora",
+    icon: "🧮",
+    category: "Herramientas",
+    size: "25 MB",
+    description: "Calculadora integrada.",
+    target: "calculator"
+  },
+
+  {
+    id: "aido-cloud",
+    name: "Aido Cloud",
+    icon: "☁️",
+    category: "Herramientas",
+    size: "120 MB",
+    description: "Espacio de trabajo en la nube.",
+    target: "files"
+  },
+
+  {
+    id: "aido-chat",
+    name: "Aido Chat",
+    icon: "💬",
+    category: "Trabajo",
+    size: "95 MB",
+    description: "Mensajería de AidoOS.",
+    target: "aidoia"
+  }
+
+];
+
+
+/* =====================================================
+   DATOS CURIOSOS
+===================================================== */
+
+const facts = [
+
+  "Los pulpos tienen tres corazones.",
+
+  "La luz del Sol tarda aproximadamente 8 minutos y 20 segundos en llegar a la Tierra.",
+
+  "Los tiburones existen desde antes que los árboles.",
+
+  "Un día en Venus dura más que su año.",
+
+  "La Tierra no es una esfera perfecta: está ligeramente achatada en los polos.",
+
+  "Saturno tiene una densidad media menor que la del agua.",
+
+  "Algunas especies de bambú pueden crecer muy rápido en condiciones adecuadas."
+
+];
+
+
+/* =====================================================
+   ARRANQUE
 ===================================================== */
 
 document.addEventListener(
   "DOMContentLoaded",
-  () => {
-
-    createStartMenu();
-
-    updateClock();
-
-    setInterval(
-      updateClock,
-      1000
-    );
-
-    setupEvents();
-
-    showToast(
-      "👋 Bienvenido a AidoOS, Aldeano"
-    );
-
-  }
+  initAidoOS
 );
 
 
-/* =====================================================
-   CREAR INICIO
-===================================================== */
+function initAidoOS() {
 
-function createStartMenu() {
+  /*
+    El usuario quiere que las apps solo estén
+    en Inicio y no como accesos fijos en la barra.
+  */
 
-  const start =
-    document.getElementById(
-      "startApps"
-    );
+  removeStaticTaskbarAppShortcuts();
 
-  const recent =
-    document.getElementById(
-      "recentApps"
-    );
+  buildStartMenu();
 
-  start.innerHTML = "";
+  setupGlobalEvents();
 
-  Object.entries(apps)
-    .forEach(
-      ([id, app]) => {
+  updateClock();
 
-        const button =
-          document.createElement(
-            "button"
-          );
+  setInterval(
+    updateClock,
+    1000
+  );
 
-        button.className =
-          "app-start-button";
-
-        button.dataset.openApp =
-          id;
-
-        button.innerHTML = `
-          <span class="app-start-icon">
-            ${app.icon}
-          </span>
-
-          <span class="app-start-name">
-            ${app.title}
-          </span>
-        `;
-
-        start.appendChild(button);
-
-      }
-    );
-
-
-  recent.innerHTML = "";
-
-  const recientes = [
-    "browser",
-    "aidoia",
-    "store"
-  ];
-
-  recientes.forEach(
-    id => {
-
-      const app = apps[id];
-
-      const item =
-        document.createElement(
-          "div"
-        );
-
-      item.className =
-        "recent-item";
-
-      item.dataset.openApp =
-        id;
-
-      item.innerHTML = `
-        <span>${app.icon}</span>
-
-        <div>
-          <strong>${app.title}</strong>
-          <small>Usado recientemente</small>
-        </div>
-      `;
-
-      recent.appendChild(item);
-
-    }
+  showToast(
+    "👋 Bienvenido a AidoOS, Aldeano"
   );
 
 }
 
 
 /* =====================================================
-   EVENTOS
+   QUITAR APPS FIJAS DE LA BARRA
 ===================================================== */
 
-function setupEvents() {
+function removeStaticTaskbarAppShortcuts() {
+
+  document
+    .querySelectorAll(
+      "#taskbar [data-open-app]"
+    )
+    .forEach(
+      element => element.remove()
+    );
+
+}
+
+
+/* =====================================================
+   MENÚ INICIO
+===================================================== */
+
+function buildStartMenu() {
+
+  const grid =
+    document.getElementById(
+      "startApps"
+    );
+
+  if (!grid) return;
+
+
+  grid.innerHTML =
+    Object.entries(
+      apps
+    )
+    .map(
+      ([id, app]) => `
+
+        <button
+          class="app-start-button"
+          type="button"
+          data-open-app="${id}"
+        >
+
+          <span class="app-start-icon">
+            ${app.icon}
+          </span>
+
+          <span class="app-start-name">
+            ${escapeHTML(app.title)}
+          </span>
+
+        </button>
+
+      `
+    )
+    .join("");
+
+
+  renderRecentApps();
+
+}
+
+
+function renderRecentApps() {
+
+  const container =
+    document.getElementById(
+      "recentApps"
+    );
+
+  if (!container) return;
+
+
+  const ids =
+    state.recent.length
+      ? state.recent.slice(0, 3)
+      : [
+          "aidoia",
+          "store",
+          "browser"
+        ];
+
+
+  container.innerHTML =
+    ids
+      .map(
+        id => {
+
+          const app =
+            apps[id];
+
+          if (!app) return "";
+
+
+          return `
+
+            <button
+              class="recent-item"
+              data-open-app="${id}"
+              type="button"
+            >
+
+              <span>
+                ${app.icon}
+              </span>
+
+              <div>
+
+                <strong>
+                  ${escapeHTML(app.title)}
+                </strong>
+
+                <small>
+                  Usado recientemente
+                </small>
+
+              </div>
+
+            </button>
+
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+function addRecent(
+  appId
+) {
+
+  state.recent =
+    [
+      appId,
+
+      ...state.recent
+        .filter(
+          id => id !== appId
+        )
+
+    ].slice(0, 6);
+
+
+  saveJSON(
+    "aido_recent",
+    state.recent
+  );
+
+
+  renderRecentApps();
+
+}
+
+
+/* =====================================================
+   EVENTOS GLOBALES
+===================================================== */
+
+function setupGlobalEvents() {
 
   document.addEventListener(
     "click",
-    event => {
+    onDocumentClick
+  );
 
-      const open =
-        event.target.closest(
-          "[data-open-app]"
-        );
 
-      if (open) {
+  const startButton =
+    document.getElementById(
+      "startButton"
+    );
+
+  const searchButton =
+    document.getElementById(
+      "taskSearchButton"
+    );
+
+  const widgetsButton =
+    document.getElementById(
+      "widgetsButton"
+    );
+
+  const networkButton =
+    document.getElementById(
+      "networkButton"
+    );
+
+  const volumeButton =
+    document.getElementById(
+      "volumeButton"
+    );
+
+  const batteryButton =
+    document.getElementById(
+      "batteryButton"
+    );
+
+  const desktopButton =
+    document.getElementById(
+      "desktopButton"
+    );
+
+  const clockButton =
+    document.getElementById(
+      "clockButton"
+    );
+
+  const startSearch =
+    document.getElementById(
+      "startSearch"
+    );
+
+  const systemSearch =
+    document.getElementById(
+      "systemSearch"
+    );
+
+  const clearNotifications =
+    document.getElementById(
+      "clearNotifications"
+    );
+
+  const powerButton =
+    document.getElementById(
+      "powerButton"
+    );
+
+  const brightnessSlider =
+    document.getElementById(
+      "brightnessSlider"
+    );
+
+
+  if (startButton) {
+
+    startButton.addEventListener(
+      "click",
+      event => {
 
         event.stopPropagation();
 
-        openApp(
-          open.dataset.openApp
+        togglePanel(
+          "startMenu"
         );
 
-        return;
       }
+    );
+
+  }
 
 
-      const closePanel =
-        event.target.closest(
-          "[data-close-panel]"
+  if (searchButton) {
+
+    searchButton.addEventListener(
+      "click",
+      event => {
+
+        event.stopPropagation();
+
+        togglePanel(
+          "searchPanel"
         );
 
-      if (closePanel) {
 
-        document
-          .getElementById(
-            closePanel.dataset.closePanel
-          )
-          .classList.add(
-            "hidden"
+        setTimeout(
+          () => {
+
+            const input =
+              document.getElementById(
+                "systemSearch"
+              );
+
+            if (input) {
+
+              input.focus();
+
+              input.select();
+
+            }
+
+            showRandomFact();
+
+          },
+          50
+        );
+
+      }
+    );
+
+  }
+
+
+  if (widgetsButton) {
+
+    widgetsButton.addEventListener(
+      "click",
+      event => {
+
+        event.stopPropagation();
+
+        togglePanel(
+          "widgetPanel"
+        );
+
+      }
+    );
+
+  }
+
+
+  [
+    networkButton,
+    volumeButton,
+    batteryButton
+  ]
+  .forEach(
+    button => {
+
+      if (!button) return;
+
+
+      button.addEventListener(
+        "click",
+        event => {
+
+          event.stopPropagation();
+
+          togglePanel(
+            "quickPanel"
           );
 
-        return;
-      }
-
-
-      const windowAction =
-        event.target.closest(
-          "[data-window-action]"
-        );
-
-      if (windowAction) {
-
-        event.stopPropagation();
-
-        const id =
-          windowAction
-            .closest(".aido-window")
-            .dataset.id;
-
-        const action =
-          windowAction.dataset.windowAction;
-
-        if (action === "close")
-          closeWindow(id);
-
-        if (action === "minimize")
-          minimizeWindow(id);
-
-        if (action === "suspend")
-          suspendWindow(id);
-
-        return;
-      }
+        }
+      );
 
     }
   );
 
 
-  document
-    .getElementById("startButton")
-    .onclick = () => {
+  if (desktopButton) {
 
-      togglePanel(
-        "startMenu"
-      );
+    desktopButton.addEventListener(
+      "click",
+      event => {
 
-    };
+        event.stopPropagation();
 
+        togglePanel(
+          "desktopSwitcher"
+        );
 
-  document
-    .getElementById("taskSearchButton")
-    .onclick = () => {
+      }
+    );
 
-      togglePanel(
-        "searchPanel"
-      );
-
-      setTimeout(
-        () =>
-          document
-            .getElementById(
-              "systemSearch"
-            )
-            .focus(),
-        50
-      );
-
-    };
+  }
 
 
-  document
-    .getElementById("widgetsButton")
-    .onclick = () =>
-      togglePanel("widgetPanel");
+  if (clockButton) {
+
+    clockButton.addEventListener(
+      "click",
+      event => {
+
+        event.stopPropagation();
+
+        togglePanel(
+          "notificationPanel"
+        );
+
+      }
+    );
+
+  }
 
 
-  document
-    .getElementById("networkButton")
-    .onclick = () =>
-      togglePanel("quickPanel");
+  if (startSearch) {
+
+    startSearch.addEventListener(
+      "input",
+      event => {
+
+        filterStartApps(
+          event.target.value
+        );
+
+      }
+    );
+
+  }
 
 
-  document
-    .getElementById("volumeButton")
-    .onclick = () =>
-      togglePanel("quickPanel");
+  if (systemSearch) {
+
+    systemSearch.addEventListener(
+      "input",
+      event => {
+
+        renderSystemSearch(
+          event.target.value
+        );
+
+      }
+    );
 
 
-  document
-    .getElementById("batteryButton")
-    .onclick = () =>
-      togglePanel("quickPanel");
-
-
-  document
-    .getElementById("desktopButton")
-    .onclick = () =>
-      togglePanel("desktopSwitcher");
-
-
-  document
-    .getElementById("clockButton")
-    .onclick = () =>
-      togglePanel("notificationPanel");
-
-
-  document
-    .getElementById("systemSearch")
-    .addEventListener(
+    systemSearch.addEventListener(
       "keydown",
       event => {
 
-        if (event.key === "Enter") {
+        if (
+          event.key === "Enter"
+        ) {
 
-          doSystemSearch(
-            event.target.value
+          renderSystemSearch(
+            event.target.value,
+            true
           );
 
         }
@@ -412,37 +724,98 @@ function setupEvents() {
       }
     );
 
+  }
 
-  document
-    .getElementById("startSearch")
-    .addEventListener(
-      "input",
-      filterStartApps
+
+  if (clearNotifications) {
+
+    clearNotifications.addEventListener(
+      "click",
+      () => {
+
+        const list =
+          document.getElementById(
+            "notifications"
+          );
+
+        if (!list) return;
+
+
+        list.innerHTML = `
+
+          <div class="notification">
+
+            <span class="notification-icon">
+              ✓
+            </span>
+
+            <div>
+
+              <strong>
+                Todo limpio
+              </strong>
+
+              <p>
+                No hay nuevas notificaciones.
+              </p>
+
+            </div>
+
+          </div>
+
+        `;
+
+      }
     );
 
-
-  document
-    .getElementById("showAllApps")
-    .onclick = () => {
-
-      document
-        .getElementById(
-          "startApps"
-        )
-        .scrollTop = 0;
-
-    };
+  }
 
 
-  document
-    .getElementById("powerButton")
-    .onclick = () => {
+  if (powerButton) {
 
-      showToast(
-        "AidoPC no se puede apagar desde JSFiddle 😄"
-      );
+    powerButton.addEventListener(
+      "click",
+      () => {
 
-    };
+        showToast(
+          "⏻ AidoPC no puede apagarse desde una página web."
+        );
+
+      }
+    );
+
+  }
+
+
+  if (brightnessSlider) {
+
+    brightnessSlider.addEventListener(
+      "input",
+      event => {
+
+        const value =
+          Number(
+            event.target.value
+          ) / 100;
+
+
+        const wallpaper =
+          document.querySelector(
+            ".wallpaper"
+          );
+
+
+        if (wallpaper) {
+
+          wallpaper.style.filter =
+            `brightness(${Math.max(.2, value)})`;
+
+        }
+
+      }
+    );
+
+  }
 
 
   document
@@ -452,13 +825,34 @@ function setupEvents() {
     .forEach(
       button => {
 
-        button.onclick = () => {
+        button.addEventListener(
+          "click",
+          () => {
 
-          button.classList.toggle(
-            "active"
-          );
+            button.classList.toggle(
+              "active"
+            );
 
-        };
+
+            const small =
+              button.querySelector(
+                "small"
+              );
+
+
+            if (small) {
+
+              small.textContent =
+                button.classList.contains(
+                  "active"
+                )
+                  ? "Activado"
+                  : "Desactivado";
+
+            }
+
+          }
+        );
 
       }
     );
@@ -471,15 +865,18 @@ function setupEvents() {
     .forEach(
       button => {
 
-        button.onclick = () => {
+        button.addEventListener(
+          "click",
+          () => {
 
-          switchDesktop(
-            Number(
-              button.dataset.desktop
-            )
-          );
+            switchDesktop(
+              Number(
+                button.dataset.desktop
+              )
+            );
 
-        };
+          }
+        );
 
       }
     );
@@ -488,70 +885,207 @@ function setupEvents() {
 
 
 /* =====================================================
+   CLICK GLOBAL
+===================================================== */
+
+function onDocumentClick(
+  event
+) {
+
+  const open =
+    event.target.closest(
+      "[data-open-app]"
+    );
+
+
+  if (open) {
+
+    event.preventDefault();
+
+    event.stopPropagation();
+
+    openApp(
+      open.dataset.openApp
+    );
+
+    return;
+
+  }
+
+
+  const closePanel =
+    event.target.closest(
+      "[data-close-panel]"
+    );
+
+
+  if (closePanel) {
+
+    const panel =
+      document.getElementById(
+        closePanel.dataset.closePanel
+      );
+
+    if (panel) {
+
+      panel.classList.add(
+        "hidden"
+      );
+
+    }
+
+    return;
+
+  }
+
+
+  const windowAction =
+    event.target.closest(
+      "[data-window-action]"
+    );
+
+
+  if (windowAction) {
+
+    const win =
+      windowAction.closest(
+        ".aido-window"
+      );
+
+
+    if (!win) return;
+
+
+    event.preventDefault();
+
+    event.stopPropagation();
+
+
+    handleWindowAction(
+      win.dataset.id,
+      windowAction.dataset.windowAction
+    );
+
+  }
+
+}
+
+
+/* =====================================================
    ABRIR APP
 ===================================================== */
 
-function openApp(appId) {
+function openApp(
+  appId
+) {
 
-  const app = apps[appId];
+  const app =
+    apps[appId];
+
 
   if (!app) return;
 
 
-  // Si ya está abierta, solo la enfocamos
+  /*
+    Si ya estaba abierta,
+    no se duplica.
+  */
 
   for (
     const [id, data]
     of state.windows
   ) {
 
-    if (data.appId === appId) {
+    if (
+      data.appId === appId
+    ) {
 
-      restoreWindow(id);
+      if (
+        data.desktop !==
+        state.currentDesktop
+      ) {
+
+        switchDesktop(
+          data.desktop
+        );
+
+      }
+
+
+      restoreWindow(
+        id
+      );
+
 
       focusWindow(
         data.element
       );
 
+
       closeAllPanels();
 
+
       return;
+
     }
 
   }
 
 
-  state.windowNumber++;
-
   const id =
-    appId +
-    "-" +
-    state.windowNumber;
+    `${appId}-${++state.windowNumber}`;
 
 
   const win =
     document.createElement(
-      "div"
+      "section"
     );
+
+
+  const offset =
+    (
+      state.windowNumber *
+      28
+    ) % 180;
+
 
   win.className =
     "aido-window";
 
-  win.dataset.id = id;
 
-  win.dataset.appId = appId;
+  win.dataset.id =
+    id;
+
+
+  win.dataset.appId =
+    appId;
+
 
   win.style.left =
-    (
-      80 +
-      ((state.windowNumber * 35) % 250)
-    ) + "px";
+    `${Math.max(
+      25,
+      130 + offset
+    )}px`;
+
 
   win.style.top =
-    (
-      45 +
-      ((state.windowNumber * 25) % 150)
-    ) + "px";
+    `${Math.max(
+      25,
+      65 + (offset % 100)
+    )}px`;
+
+
+  win.style.zIndex =
+    ++state.zIndex;
+
+
+  /*
+    Permitir redimensionar
+    la ventana con el mouse.
+  */
+
+  win.style.resize =
+    "both";
 
 
   win.innerHTML = `
@@ -565,23 +1099,26 @@ function openApp(appId) {
         </span>
 
         <span>
-          ${app.title}
+          ${escapeHTML(app.title)}
         </span>
 
       </div>
+
 
       <div class="window-controls">
 
         <button
           class="window-control"
+          type="button"
           data-window-action="minimize"
           title="Minimizar"
         >
-          ─
+          —
         </button>
 
         <button
           class="window-control"
+          type="button"
           data-window-action="suspend"
           title="Suspender"
         >
@@ -590,6 +1127,7 @@ function openApp(appId) {
 
         <button
           class="window-control close"
+          type="button"
           data-window-action="close"
           title="Cerrar"
         >
@@ -600,16 +1138,22 @@ function openApp(appId) {
 
     </div>
 
+
     <div class="window-content"></div>
+
 
     <div class="suspended-screen">
 
-      <span style="font-size:35px">⏸</span>
+      <span style="font-size:36px">
+        ⏸
+      </span>
 
-      <strong>Aplicación suspendida</strong>
+      <strong>
+        Aplicación suspendida
+      </strong>
 
       <small>
-        Pulsa la pestaña para reanudarla
+        Pulsa su pestaña para reanudarla
       </small>
 
     </div>
@@ -622,6 +1166,7 @@ function openApp(appId) {
       ".window-content"
     );
 
+
   content.innerHTML =
     app.render();
 
@@ -630,46 +1175,169 @@ function openApp(appId) {
     .getElementById(
       "windowLayer"
     )
-    .appendChild(win);
+    .appendChild(
+      win
+    );
 
 
   state.windows.set(
     id,
     {
+
+      id,
       appId,
       element: win,
-      minimized: false,
-      suspended: false,
+
       desktop:
-        state.currentDesktop
+        state.currentDesktop,
+
+      minimized: false,
+
+      suspended: false
+
     }
   );
 
 
   state.desktops[
     state.currentDesktop
-  ].push(id);
+  ].push(
+    id
+  );
 
 
-  makeDraggable(win);
+  wireApp(
+    appId,
+    content
+  );
 
-  focusWindow(win);
 
-  addRecent(appId);
+  setupWindowInteractions(
+    win
+  );
+
 
   createTaskTab(
     id,
     app
   );
 
+
+  addRecent(
+    appId
+  );
+
+
+  focusWindow(
+    win
+  );
+
+
   closeAllPanels();
 
 
-  if (appId === "games") {
+  if (
+    appId === "store"
+  ) {
 
     setTimeout(
-      setupGames,
-      100
+      () => {
+
+        renderStoreCards();
+
+      },
+      0
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   INTERACCIONES DE VENTANA
+===================================================== */
+
+function setupWindowInteractions(
+  win
+) {
+
+  win.addEventListener(
+    "mousedown",
+    () => {
+
+      focusWindow(
+        win
+      );
+
+    }
+  );
+
+
+  win
+    .querySelectorAll(
+      ".window-control"
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+          "mousedown",
+          event => {
+
+            event.stopPropagation();
+
+          }
+        );
+
+      }
+    );
+
+
+  makeDraggable(
+    win
+  );
+
+}
+
+
+/* =====================================================
+   ACCIONES DE VENTANA
+===================================================== */
+
+function handleWindowAction(
+  id,
+  action
+) {
+
+  if (
+    action === "close"
+  ) {
+
+    closeWindow(
+      id
+    );
+
+  }
+
+
+  else if (
+    action === "minimize"
+  ) {
+
+    minimizeWindow(
+      id
+    );
+
+  }
+
+
+  else if (
+    action === "suspend"
+  ) {
+
+    suspendWindow(
+      id
     );
 
   }
@@ -681,22 +1349,30 @@ function openApp(appId) {
    CERRAR
 ===================================================== */
 
-function closeWindow(id) {
+function closeWindow(
+  id
+) {
 
   const data =
-    state.windows.get(id);
+    state.windows.get(
+      id
+    );
+
 
   if (!data) return;
 
 
   data.element.remove();
 
-  state.windows.delete(id);
+  state.windows.delete(
+    id
+  );
 
 
   Object.keys(
     state.desktops
-  ).forEach(
+  )
+  .forEach(
     desktop => {
 
       state.desktops[desktop] =
@@ -711,8 +1387,9 @@ function closeWindow(id) {
 
   const tab =
     document.querySelector(
-      `.task-tab[data-id="${id}"]`
+      `.task-tab[data-id="${CSS.escape(id)}"]`
     );
+
 
   if (tab)
     tab.remove();
@@ -724,14 +1401,22 @@ function closeWindow(id) {
    MINIMIZAR
 ===================================================== */
 
-function minimizeWindow(id) {
+function minimizeWindow(
+  id
+) {
 
   const data =
-    state.windows.get(id);
+    state.windows.get(
+      id
+    );
+
 
   if (!data) return;
 
-  data.minimized = true;
+
+  data.minimized =
+    true;
+
 
   data.element.style.display =
     "none";
@@ -743,27 +1428,37 @@ function minimizeWindow(id) {
    RESTAURAR
 ===================================================== */
 
-function restoreWindow(id) {
+function restoreWindow(
+  id
+) {
 
   const data =
-    state.windows.get(id);
+    state.windows.get(
+      id
+    );
+
 
   if (!data) return;
 
-  data.minimized = false;
+
+  data.minimized =
+    false;
+
 
   data.element.style.display =
     "flex";
 
-  data.element.classList.remove(
-    "suspended"
-  );
 
-  data.suspended = false;
+  if (data.suspended) {
 
-  focusWindow(
-    data.element
-  );
+    data.suspended =
+      false;
+
+    data.element.classList.remove(
+      "suspended"
+    );
+
+  }
 
 }
 
@@ -772,29 +1467,53 @@ function restoreWindow(id) {
    SUSPENDER
 ===================================================== */
 
-function suspendWindow(id) {
+function suspendWindow(
+  id
+) {
 
   const data =
-    state.windows.get(id);
+    state.windows.get(
+      id
+    );
+
 
   if (!data) return;
 
+
   data.suspended =
     !data.suspended;
+
 
   data.element.classList.toggle(
     "suspended",
     data.suspended
   );
 
+
+  const name =
+    apps[data.appId]?.title ||
+    "Aplicación";
+
+
+  showToast(
+    data.suspended
+      ? `⏸ ${name} suspendida`
+      : `▶ ${name} reanudada`
+  );
+
 }
 
 
 /* =====================================================
-   FOCO
+   ENFOCAR
 ===================================================== */
 
-function focusWindow(win) {
+function focusWindow(
+  win
+) {
+
+  if (!win) return;
+
 
   state.zIndex++;
 
@@ -816,19 +1535,23 @@ function focusWindow(win) {
 
   const tab =
     document.querySelector(
-      `.task-tab[data-id="${win.dataset.id}"]`
+      `.task-tab[data-id="${CSS.escape(win.dataset.id)}"]`
     );
 
-  if (tab)
+
+  if (tab) {
+
     tab.classList.add(
       "active"
     );
+
+  }
 
 }
 
 
 /* =====================================================
-   PESTAÑAS
+   PESTAÑA DE APP EN LA BARRA
 ===================================================== */
 
 function createTaskTab(
@@ -841,11 +1564,14 @@ function createTaskTab(
       "div"
     );
 
+
   tab.className =
     "task-tab";
 
+
   tab.dataset.id =
     id;
+
 
   tab.innerHTML = `
 
@@ -854,11 +1580,12 @@ function createTaskTab(
     </span>
 
     <span>
-      ${app.title}
+      ${escapeHTML(app.title)}
     </span>
 
     <button
       class="task-tab-close"
+      type="button"
       title="Cerrar"
     >
       ×
@@ -871,54 +1598,76 @@ function createTaskTab(
     "click",
     event => {
 
+      if (
+        event.target.closest(
+          ".task-tab-close"
+        )
+      ) {
+
+        event.stopPropagation();
+
+        closeWindow(
+          id
+        );
+
+        return;
+
+      }
+
+
       const data =
-        state.windows.get(id);
+        state.windows.get(
+          id
+        );
+
 
       if (!data) return;
 
 
       if (
-        event.target
-          .classList
-          .contains(
-            "task-tab-close"
-          )
+        data.desktop !==
+        state.currentDesktop
       ) {
 
-        event.stopPropagation();
-
-        closeWindow(id);
-
-        return;
-      }
-
-
-      if (data.minimized) {
-
-        restoreWindow(id);
-
-      } else {
-
-        data.element.style.display =
-          "flex";
-
-        focusWindow(
-          data.element
+        switchDesktop(
+          data.desktop
         );
 
       }
 
-      if (data.suspended) {
 
-        data.suspended = false;
+      if (
+        data.minimized
+      ) {
 
-        data.element
-          .classList
-          .remove(
-            "suspended"
-          );
+        restoreWindow(
+          id
+        );
 
       }
+
+
+      if (
+        data.suspended
+      ) {
+
+        data.suspended =
+          false;
+
+        data.element.classList.remove(
+          "suspended"
+        );
+
+      }
+
+
+      data.element.style.display =
+        "flex";
+
+
+      focusWindow(
+        data.element
+      );
 
     }
   );
@@ -928,65 +1677,58 @@ function createTaskTab(
     .getElementById(
       "taskTabs"
     )
-    .appendChild(tab);
+    .appendChild(
+      tab
+    );
 
 }
 
 
 /* =====================================================
-   ARRASTRAR VENTANAS
+   ARRASTRAR VENTANA
 ===================================================== */
 
-function makeDraggable(win) {
+function makeDraggable(
+  win
+) {
 
   const header =
     win.querySelector(
       ".window-header"
     );
 
-  let dragging = false;
 
-  let offsetX = 0;
-
-  let offsetY = 0;
+  let dragging =
+    false;
 
 
-  header.addEventListener(
-    "mousedown",
+  let offsetX =
+    0;
+
+
+  let offsetY =
+    0;
+
+
+  const onMove =
     event => {
+
+      if (!dragging)
+        return;
+
 
       if (
-        event.target.closest(
-          "button"
+        win.classList.contains(
+          "maximized"
         )
-      ) return;
+      )
+        return;
 
-
-      dragging = true;
-
-      offsetX =
-        event.clientX -
-        win.offsetLeft;
-
-      offsetY =
-        event.clientY -
-        win.offsetTop;
-
-      focusWindow(win);
-
-    }
-  );
-
-
-  document.addEventListener(
-    "mousemove",
-    event => {
-
-      if (!dragging) return;
 
       let x =
         event.clientX -
         offsetX;
+
 
       let y =
         event.clientY -
@@ -998,36 +1740,102 @@ function makeDraggable(win) {
           0,
           Math.min(
             window.innerWidth -
-            win.offsetWidth,
+            Math.min(
+              120,
+              win.offsetWidth
+            ),
             x
           )
         );
+
 
       y =
         Math.max(
           0,
           Math.min(
             window.innerHeight -
-            90,
+            80,
             y
           )
         );
 
 
       win.style.left =
-        x + "px";
+        `${x}px`;
+
 
       win.style.top =
-        y + "px";
+        `${y}px`;
 
-    }
-  );
+    };
 
 
-  document.addEventListener(
-    "mouseup",
+  const stop =
     () => {
-      dragging = false;
+
+      dragging =
+        false;
+
+
+      document.removeEventListener(
+        "mousemove",
+        onMove
+      );
+
+
+      document.removeEventListener(
+        "mouseup",
+        stop
+      );
+
+    };
+
+
+  header.addEventListener(
+    "mousedown",
+    event => {
+
+      if (
+        event.target.closest(
+          ".window-controls"
+        )
+      )
+        return;
+
+
+      dragging =
+        true;
+
+
+      offsetX =
+        event.clientX -
+        win.offsetLeft;
+
+
+      offsetY =
+        event.clientY -
+        win.offsetTop;
+
+
+      focusWindow(
+        win
+      );
+
+
+      document.addEventListener(
+        "mousemove",
+        onMove
+      );
+
+
+      document.addEventListener(
+        "mouseup",
+        stop
+      );
+
+
+      event.preventDefault();
+
     }
   );
 
@@ -1035,25 +1843,38 @@ function makeDraggable(win) {
 
 
 /* =====================================================
-   PANEL
+   PANELES
 ===================================================== */
 
-function togglePanel(id) {
+function togglePanel(
+  id
+) {
 
   const panel =
-    document.getElementById(id);
+    document.getElementById(
+      id
+    );
+
+
+  if (!panel) return;
+
 
   const wasHidden =
     panel.classList.contains(
       "hidden"
     );
 
+
   closeAllPanels();
 
-  if (wasHidden)
+
+  if (wasHidden) {
+
     panel.classList.remove(
       "hidden"
     );
+
+  }
 
 }
 
@@ -1067,16 +1888,331 @@ function closeAllPanels() {
     "quickPanel",
     "notificationPanel",
     "desktopSwitcher"
-  ].forEach(
+
+  ]
+  .forEach(
     id => {
 
-      document
-        .getElementById(id)
-        .classList.add(
+      const element =
+        document.getElementById(
+          id
+        );
+
+
+      if (element) {
+
+        element.classList.add(
           "hidden"
         );
 
+      }
+
     }
+  );
+
+}
+
+
+/* =====================================================
+   BUSCADOR
+===================================================== */
+
+function showRandomFact() {
+
+  const box =
+    document.getElementById(
+      "searchResult"
+    );
+
+
+  if (!box) return;
+
+
+  box.innerHTML = `
+
+    <div class="search-hint">
+
+      <strong>
+        🧠 Dato curioso
+      </strong>
+
+      <p>
+        ${escapeHTML(
+          random(
+            facts
+          )
+        )}
+      </p>
+
+      <button
+        type="button"
+        class="settings-card"
+        data-new-fact="true"
+      >
+        ✨ Otro dato
+      </button>
+
+    </div>
+
+  `;
+
+
+  const button =
+    box.querySelector(
+      "[data-new-fact]"
+    );
+
+
+  if (button) {
+
+    button.addEventListener(
+      "click",
+      showRandomFact
+    );
+
+  }
+
+}
+
+
+function renderSystemSearch(
+  query,
+  openFirst = false
+) {
+
+  const result =
+    document.getElementById(
+      "searchResult"
+    );
+
+
+  if (!result) return;
+
+
+  const q =
+    String(
+      query || ""
+    )
+    .trim()
+    .toLowerCase();
+
+
+  if (!q) {
+
+    showRandomFact();
+
+    return;
+
+  }
+
+
+  const matches =
+    Object.entries(
+      apps
+    )
+    .filter(
+      ([id, app]) =>
+
+        app.title
+          .toLowerCase()
+          .includes(q)
+
+        ||
+
+        id
+          .toLowerCase()
+          .includes(q)
+
+    );
+
+
+  if (matches.length) {
+
+    result.innerHTML =
+      matches
+        .map(
+          ([id, app]) => `
+
+            <button
+              type="button"
+              class="recent-item"
+              data-search-app="${id}"
+              style="width:100%;border:0;"
+            >
+
+              <span>
+                ${app.icon}
+              </span>
+
+              <div>
+
+                <strong>
+                  ${escapeHTML(app.title)}
+                </strong>
+
+                <small>
+                  Aplicación
+                </small>
+
+              </div>
+
+            </button>
+
+          `
+        )
+        .join("");
+
+
+    result
+      .querySelectorAll(
+        "[data-search-app]"
+      )
+      .forEach(
+        button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              openApp(
+                button.dataset.searchApp
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+    if (openFirst) {
+
+      openApp(
+        matches[0][0]
+      );
+
+    }
+
+
+    return;
+
+  }
+
+
+  result.innerHTML = `
+
+    <div class="search-hint">
+
+      <strong>
+        🔎 No encontré esa aplicación.
+      </strong>
+
+      <p>
+        ${escapeHTML(
+          random(
+            facts
+          )
+        )}
+      </p>
+
+    </div>
+
+  `;
+
+}
+
+
+function filterStartApps(
+  query
+) {
+
+  const q =
+    String(
+      query || ""
+    ).toLowerCase();
+
+
+  document
+    .querySelectorAll(
+      ".app-start-button"
+    )
+    .forEach(
+      button => {
+
+        button.style.display =
+          button.textContent
+            .toLowerCase()
+            .includes(q)
+              ? "flex"
+              : "none";
+
+      }
+    );
+
+}
+
+
+/* =====================================================
+   ESCRITORIOS VIRTUALES
+===================================================== */
+
+function switchDesktop(
+  desktop
+) {
+
+  if (
+    ![1, 2, 3].includes(
+      desktop
+    )
+  )
+    return;
+
+
+  state.currentDesktop =
+    desktop;
+
+
+  state.windows.forEach(
+    data => {
+
+      const visible =
+        data.desktop ===
+        desktop;
+
+
+      data.element.style.display =
+        visible &&
+        !data.minimized
+          ? "flex"
+          : "none";
+
+    }
+  );
+
+
+  document
+    .querySelectorAll(
+      "[data-desktop]"
+    )
+    .forEach(
+      button => {
+
+        button.style.boxShadow =
+          Number(
+            button.dataset.desktop
+          ) === desktop
+            ? "inset 0 0 0 2px #20e59b"
+            : "";
+
+      }
+    );
+
+
+  closeAllPanels();
+
+
+  showToast(
+    `🖥️ Aido Escritorio ${desktop}`
   );
 
 }
@@ -1091,6 +2227,7 @@ function updateClock() {
   const now =
     new Date();
 
+
   const time =
     now.toLocaleTimeString(
       "es-MX",
@@ -1100,185 +2237,247 @@ function updateClock() {
       }
     );
 
+
   const date =
     now.toLocaleDateString(
       "es-MX"
     );
 
 
-  document
-    .getElementById(
-      "taskClock"
-    )
-    .textContent =
-    time;
-
-  document
-    .getElementById(
-      "taskDate"
-    )
-    .textContent =
-    date;
+  setText(
+    "taskClock",
+    time
+  );
 
 
-  document
-    .getElementById(
-      "desktopClock"
-    )
-    .textContent =
-    time;
+  setText(
+    "taskDate",
+    date
+  );
 
 
-  document
-    .getElementById(
-      "desktopDate"
-    )
-    .textContent =
-    "AidoPC · " + date;
+  setText(
+    "desktopClock",
+    time
+  );
 
 
-  document
-    .getElementById(
-      "widgetClock"
-    )
-    .textContent =
-    time;
+  setText(
+    "desktopDate",
+    `AidoPC · ${date}`
+  );
 
 
-  document
-    .getElementById(
-      "widgetDate"
-    )
-    .textContent =
-    date;
+  setText(
+    "widgetClock",
+    time
+  );
+
+
+  setText(
+    "widgetDate",
+    date
+  );
 
 }
 
 
 /* =====================================================
-   BÚSQUEDA
+   NOTIFICACIONES
 ===================================================== */
 
-function doSystemSearch(query) {
+function addNotification(
+  title,
+  message,
+  icon = "🔔"
+) {
 
-  const result =
+  const list =
     document.getElementById(
-      "searchResult"
+      "notifications"
     );
 
-  const q =
-    query.toLowerCase().trim();
+
+  if (!list) return;
 
 
-  if (!q) {
-
-    result.innerHTML =
-      "💡 Escribe algo para buscar.";
-
-    return;
-
-  }
+  const node =
+    document.createElement(
+      "div"
+    );
 
 
-  const found =
-    Object.entries(apps)
-      .find(
-        ([id, app]) =>
-          app.title
-            .toLowerCase()
-            .includes(q)
-      );
+  node.className =
+    "notification";
 
 
-  if (found) {
+  node.innerHTML = `
 
-    const [
-      id,
-      app
-    ] = found;
+    <span class="notification-icon">
+      ${icon}
+    </span>
 
-    result.innerHTML = `
-      <div>
-        <strong>
-          ${app.icon}
-          ${app.title}
-        </strong>
+    <div>
 
-        <br><br>
+      <strong>
+        ${escapeHTML(title)}
+      </strong>
 
-        <button
-          class="settings-card"
-          onclick="openApp('${id}')"
-        >
-          Abrir
-        </button>
+      <p>
+        ${escapeHTML(message)}
+      </p>
+
+    </div>
+
+  `;
+
+
+  list.prepend(
+    node
+  );
+
+}
+
+
+/* =====================================================
+   STORE
+===================================================== */
+
+function renderStore() {
+
+  return `
+
+    <div
+      class="app-page"
+      id="storePage"
+    >
+
+      <div class="app-title">
+        🛍️ AidoStore
       </div>
-    `;
 
-    return;
-
-  }
-
-
-  const datos = [
-
-    "Los pulpos tienen tres corazones. 🐙",
-
-    "La luz del Sol tarda unos 8 minutos en llegar a la Tierra. ☀️",
-
-    "Venus gira en dirección contraria a la mayoría de planetas. 🪐",
-
-    "Los tiburones existen desde antes que los árboles. 🦈",
-
-    "Algunas estrellas que vemos ya no están en la misma fase que cuando su luz salió de ellas. ✨"
-
-  ];
+      <div class="app-subtitle">
+        Aplicaciones, juegos, música y más para AidoPC.
+      </div>
 
 
-  result.innerHTML = `
+      <input
+        id="storeSearch"
+        class="store-search"
+        placeholder="🔎 Buscar aplicaciones y juegos..."
+      >
 
-    <strong>💡 Dato curioso</strong>
 
-    <p>
-      ${
-        datos[
-          Math.floor(
-            Math.random() *
-            datos.length
-          )
+      <div class="store-categories">
+
+        ${[
+          "Todos",
+          "Juegos",
+          "Trabajo",
+          "Música",
+          "Herramientas"
+
         ]
-      }
-    </p>
+        .map(
+          (
+            category,
+            index
+          ) => `
+
+            <button
+              type="button"
+              class="store-category ${
+                index === 0
+                  ? "active"
+                  : ""
+              }"
+              data-store-category="${category}"
+            >
+
+              ${category}
+
+            </button>
+
+          `
+        )
+        .join("")}
+
+      </div>
+
+
+      <div
+        id="storeGrid"
+        class="store-grid"
+      ></div>
+
+    </div>
 
   `;
 
 }
 
 
-/* =====================================================
-   FILTRO INICIO
-===================================================== */
+function wireStore(
+  content
+) {
 
-function filterStartApps(event) {
+  const search =
+    content.querySelector(
+      "#storeSearch"
+    );
 
-  const q =
-    event.target.value
-      .toLowerCase();
 
-  document
+  if (search) {
+
+    search.addEventListener(
+      "input",
+      () =>
+        renderStoreCards(
+          search.value
+        )
+    );
+
+  }
+
+
+  content
     .querySelectorAll(
-      ".app-start-button"
+      "[data-store-category]"
     )
     .forEach(
       button => {
 
-        button.style.display =
-          button
-            .textContent
-            .toLowerCase()
-            .includes(q)
-              ? "flex"
-              : "none";
+        button.addEventListener(
+          "click",
+          () => {
+
+            state.storeCategory =
+              button.dataset.storeCategory;
+
+
+            content
+              .querySelectorAll(
+                "[data-store-category]"
+              )
+              .forEach(
+                item =>
+                  item.classList.remove(
+                    "active"
+                  )
+              );
+
+
+            button.classList.add(
+              "active"
+            );
+
+
+            renderStoreCards(
+              search?.value || ""
+            );
+
+          }
+        );
 
       }
     );
@@ -1286,21 +2485,446 @@ function filterStartApps(event) {
 }
 
 
-/* =====================================================
-   RECIENTES
-===================================================== */
+function renderStoreCards(
+  search = ""
+) {
 
-function addRecent(appId) {
+  const grid =
+    document.getElementById(
+      "storeGrid"
+    );
 
-  state.recent =
-    [
-      appId,
-      ...state.recent
-        .filter(
-          x => x !== appId
-        )
-    ]
-    .slice(0,5);
+
+  if (!grid) return;
+
+
+  const q =
+    search
+      .toLowerCase()
+      .trim();
+
+
+  const filtered =
+    storeApps.filter(
+      app => {
+
+        const bySearch =
+          !q ||
+
+          `${app.name} ${app.description} ${app.category}`
+            .toLowerCase()
+            .includes(q);
+
+
+        const byCategory =
+          state.storeCategory ===
+            "Todos" ||
+
+          app.category ===
+            state.storeCategory;
+
+
+        return (
+          bySearch &&
+          byCategory
+        );
+
+      }
+    );
+
+
+  grid.innerHTML =
+    filtered
+      .map(
+        app => {
+
+          const install =
+            state.installations[
+              app.id
+            ];
+
+
+          let buttonText =
+            "Instalar";
+
+
+          if (
+            install?.status ===
+            "downloading"
+          ) {
+
+            buttonText =
+              `Descargando ${install.progress}%`;
+
+          }
+
+
+          else if (
+            install?.status ===
+            "installing"
+          ) {
+
+            buttonText =
+              "Instalando…";
+
+          }
+
+
+          else if (
+            install?.status ===
+            "installed"
+          ) {
+
+            buttonText =
+              "✓ Instalado · Abrir";
+
+          }
+
+
+          return `
+
+            <article class="store-card">
+
+              <div class="store-card-icon">
+                ${app.icon}
+              </div>
+
+              <h4>
+                ${escapeHTML(app.name)}
+              </h4>
+
+              <p>
+                ${escapeHTML(app.description)}
+                <br>
+                <strong>
+                  ${escapeHTML(app.size)}
+                </strong>
+              </p>
+
+
+              ${
+                install?.status ===
+                "downloading"
+
+                ? `
+
+                  <div style="
+                    height:7px;
+                    background:#2a2d31;
+                    border-radius:99px;
+                    overflow:hidden;
+                    margin:9px 0;
+                  ">
+
+                    <div style="
+                      width:${install.progress}%;
+                      height:100%;
+                      background:#20e59b;
+                    "></div>
+
+                  </div>
+
+                `
+
+                : ""
+              }
+
+
+              ${
+                install?.status ===
+                "installed"
+
+                ? `
+
+                  <small style="
+                    display:block;
+                    color:#8d959d;
+                    margin-bottom:8px;
+                  ">
+
+                    📁 AidoPC /
+                    Aplicaciones /
+                    AidoStore /
+                    ${escapeHTML(app.name)}
+
+                  </small>
+
+                `
+
+                : ""
+              }
+
+
+              <button
+                type="button"
+                class="${
+                  install?.status ===
+                  "installed"
+                    ? "installed"
+                    : ""
+                }"
+                data-store-action="${app.id}"
+              >
+
+                ${buttonText}
+
+              </button>
+
+            </article>
+
+          `;
+
+        }
+      )
+      .join("");
+
+
+  grid
+    .querySelectorAll(
+      "[data-store-action]"
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () =>
+            handleStoreAction(
+              button.dataset.storeAction
+            )
+        );
+
+      }
+    );
+
+}
+
+
+function handleStoreAction(
+  appId
+) {
+
+  const app =
+    storeApps.find(
+      item =>
+        item.id ===
+        appId
+    );
+
+
+  if (!app) return;
+
+
+  const existing =
+    state.installations[
+      appId
+    ];
+
+
+  if (
+    existing?.status ===
+    "installed"
+  ) {
+
+    openApp(
+      app.target
+    );
+
+    return;
+
+  }
+
+
+  if (
+    state.installTimers.has(
+      appId
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  state.installations[
+    appId
+  ] = {
+
+    status:
+      "downloading",
+
+    progress:
+      0,
+
+    name:
+      app.name,
+
+    size:
+      app.size,
+
+    path:
+      `AidoPC / Aplicaciones / AidoStore / ${app.name}`
+
+  };
+
+
+  saveJSON(
+    "aido_installations",
+    state.installations
+  );
+
+
+  renderStoreCards(
+    document.getElementById(
+      "storeSearch"
+    )?.value || ""
+  );
+
+
+  showToast(
+    `📥 Preparando ${app.name}…`
+  );
+
+
+  const timer =
+    setInterval(
+      () => {
+
+        const installation =
+          state.installations[
+            appId
+          ];
+
+
+        if (!installation) {
+
+          clearInterval(
+            timer
+          );
+
+          state.installTimers.delete(
+            appId
+          );
+
+          return;
+
+        }
+
+
+        installation.progress =
+          Math.min(
+            100,
+            installation.progress +
+              randomInt(
+                5,
+                14
+              )
+          );
+
+
+        if (
+          installation.progress <
+          100
+        ) {
+
+          showToast(
+            `📥 Descargando ${app.name} · ${installation.progress}%`
+          );
+
+
+          renderStoreCards(
+            document.getElementById(
+              "storeSearch"
+            )?.value || ""
+          );
+
+
+          return;
+
+        }
+
+
+        installation.status =
+          "installing";
+
+
+        saveJSON(
+          "aido_installations",
+          state.installations
+        );
+
+
+        renderStoreCards(
+          document.getElementById(
+            "storeSearch"
+          )?.value || ""
+        );
+
+
+        showToast(
+          `⚙️ Instalando ${app.name}…`
+        );
+
+
+        clearInterval(
+          timer
+        );
+
+
+        state.installTimers.delete(
+          appId
+        );
+
+
+        setTimeout(
+          () => {
+
+            installation.status =
+              "installed";
+
+
+            installation.installedAt =
+              new Date()
+                .toISOString();
+
+
+            saveJSON(
+              "aido_installations",
+              state.installations
+            );
+
+
+            renderStoreCards(
+              document.getElementById(
+                "storeSearch"
+              )?.value || ""
+            );
+
+
+            addNotification(
+              "AidoStore",
+              `${app.name} se instaló correctamente.`,
+              "🛍️"
+            );
+
+
+            showToast(
+              `✅ ${app.name} instalado`
+            );
+
+          },
+          1300
+        );
+
+      },
+      380
+    );
+
+
+  state.installTimers.set(
+    appId,
+    timer
+  );
 
 }
 
@@ -1323,7 +2947,9 @@ function renderAidoIA() {
 
         <div>
 
-          <strong>AidoIA</strong>
+          <strong>
+            AidoIA
+          </strong>
 
           <div class="aidoia-status">
             Asistente de AidoOS · v0.1
@@ -1341,30 +2967,16 @@ function renderAidoIA() {
 
         <div class="ai-message">
 
-          ¡Qué onda, <b>Aldeano</b>! 👋
+          ¡Qué onda,
+          <b>Aldeano</b>! 👋
 
           <br><br>
 
           Soy AidoIA.
 
-          Puedes hablar conmigo normalmente
-          o pedirme cosas de AidoOS.
-
-          <br><br>
-
-          Por ejemplo:
-
-          <br>
-
-          <b>“abre configuración”</b>
-
-          <br>
-
-          <b>“dime un dato curioso”</b>
-
-          <br>
-
-          <b>“¿cuánto almacenamiento tengo?”</b>
+          Puedes hablar conmigo
+          normalmente o pedirme que
+          abra cosas de AidoOS.
 
         </div>
 
@@ -1375,11 +2987,12 @@ function renderAidoIA() {
 
         <input
           id="aidoiaInput"
-          placeholder="Habla con AidoIA..."
+          placeholder="Habla con AidoIA…"
         >
 
         <button
-          onclick="sendAidoIA()"
+          id="aidoiaSend"
+          type="button"
         >
           Enviar
         </button>
@@ -1393,58 +3006,132 @@ function renderAidoIA() {
 }
 
 
-function sendAidoIA() {
+function wireAidoIA(
+  content
+) {
 
   const input =
-    document.getElementById(
-      "aidoiaInput"
+    content.querySelector(
+      "#aidoiaInput"
     );
+
+
+  const send =
+    content.querySelector(
+      "#aidoiaSend"
+    );
+
 
   const messages =
-    document.getElementById(
-      "aidoiaMessages"
+    content.querySelector(
+      "#aidoiaMessages"
     );
 
-  if (!input || !messages)
+
+  if (
+    !input ||
+    !send ||
+    !messages
+  )
     return;
 
 
-  const text =
-    input.value.trim();
-
-  if (!text)
-    return;
-
-
-  addMessage(
-    messages,
-    text,
-    "user-message"
-  );
-
-  input.value = "";
-
-
-  setTimeout(
+  const sendMessage =
     () => {
 
-      const response =
-        AidoAIResponse(text);
+      const text =
+        input.value
+          .trim();
 
-      addMessage(
+
+      if (!text)
+        return;
+
+
+      addChatMessage(
         messages,
-        response,
-        "ai-message"
+        text,
+        "user-message"
       );
 
-    },
-    450
+
+      input.value =
+        "";
+
+
+      const thinking =
+        document.createElement(
+          "div"
+        );
+
+
+      thinking.className =
+        "ai-message ai-thinking";
+
+
+      thinking.textContent =
+        "AidoIA está pensando…";
+
+
+      messages.appendChild(
+        thinking
+      );
+
+
+      messages.scrollTop =
+        messages.scrollHeight;
+
+
+      setTimeout(
+        () => {
+
+          thinking.remove();
+
+
+          const reply =
+            aidoRespond(
+              text
+            );
+
+
+          addChatMessage(
+            messages,
+            reply,
+            "ai-message"
+          );
+
+        },
+        450
+      );
+
+    };
+
+
+  send.addEventListener(
+    "click",
+    sendMessage
+  );
+
+
+  input.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+      ) {
+
+        sendMessage();
+
+      }
+
+    }
   );
 
 }
 
 
-function addMessage(
+function addChatMessage(
   container,
   text,
   className
@@ -1455,13 +3142,19 @@ function addMessage(
       "div"
     );
 
+
   div.className =
     className;
+
 
   div.textContent =
     text;
 
-  container.appendChild(div);
+
+  container.appendChild(
+    div
+  );
+
 
   container.scrollTop =
     container.scrollHeight;
@@ -1469,7 +3162,9 @@ function addMessage(
 }
 
 
-function AidoAIResponse(text) {
+function aidoRespond(
+  text
+) {
 
   const t =
     text
@@ -1477,162 +3172,254 @@ function AidoAIResponse(text) {
       .trim();
 
 
+  /*
+    COMANDOS
+  */
+
   if (
     t.includes(
       "abre configuración"
     ) ||
     t.includes(
       "abre configuracion"
+    ) ||
+    t === "configuración" ||
+    t === "configuracion"
+  ) {
+
+    openApp(
+      "settings"
+    );
+
+
+    return (
+      "Claro. Abriendo Configuración. ⚙️"
+    );
+
+  }
+
+
+  if (
+    t.includes(
+      "abre aidostore"
+    ) ||
+    t.includes(
+      "abre la tienda"
+    ) ||
+    t.includes(
+      "abre tienda"
     )
   ) {
 
-    openApp("settings");
+    openApp(
+      "store"
+    );
 
-    return "Claro. Abriendo Configuración. ⚙️";
+
+    return (
+      "Voy a abrir AidoStore. 🛍️"
+    );
 
   }
 
 
   if (
-    t.includes("abre tienda") ||
-    t.includes("aidostore")
+    t.includes(
+      "abre navegador"
+    ) ||
+    t.includes(
+      "abre aido navegger"
+    ) ||
+    t.includes(
+      "navegador"
+    )
   ) {
 
-    openApp("store");
+    openApp(
+      "browser"
+    );
 
-    return "Voy a abrir AidoStore. 🛍️";
+
+    return (
+      "Listo. Abriendo Aido NavegerPRO. 🌐"
+    );
 
   }
 
 
   if (
-    t.includes("abre navegador") ||
-    t.includes("navegador")
+    t.includes(
+      "abre juegos"
+    ) ||
+    t.includes(
+      "abrir juegos"
+    ) ||
+    t.includes(
+      "aido games"
+    ) ||
+    t.includes(
+      "aidogames"
+    )
   ) {
 
-    openApp("browser");
+    openApp(
+      "games"
+    );
 
-    return "Listo. Abriendo Aido NavegerPRO. 🌐";
+
+    return (
+      "Abriendo AidoGames. 🎮"
+    );
 
   }
 
 
   if (
-    t.includes("abre juegos") ||
-    t.includes("abrir juegos")
+    t.includes(
+      "abre office"
+    ) ||
+    t.includes(
+      "aidooffice"
+    )
   ) {
 
-    openApp("games");
+    openApp(
+      "office"
+    );
 
-    return "Abriendo AidoGames. 🎮";
+
+    return (
+      "Abriendo AidoOffice. 📘"
+    );
 
   }
 
 
   if (
-    t.includes("abre office") ||
-    t.includes("aidooffice")
+    t.includes(
+      "aidophone"
+    ) ||
+    t.includes(
+      "teléfono"
+    ) ||
+    t.includes(
+      "telefono"
+    )
   ) {
 
-    openApp("office");
+    openApp(
+      "aidophone"
+    );
 
-    return "Abriendo AidoOffice. 📘";
+
+    return (
+      "Abriendo la conexión con Aidophone. 📱"
+    );
 
   }
 
 
   if (
-    t.includes("aidophone") ||
-    t.includes("teléfono") ||
-    t.includes("telefono")
+    t.includes(
+      "actualiza"
+    ) ||
+    t.includes(
+      "aido update"
+    ) ||
+    t.includes(
+      "update"
+    )
   ) {
 
-    openApp("aidophone");
+    openApp(
+      "update"
+    );
 
-    return "Abriendo la conexión con Aidophone. 📱";
+
+    return (
+      "Abriendo Aido Update. 🔄"
+    );
 
   }
 
 
+  /*
+    PREGUNTAS
+  */
+
   if (
-    t.includes("actualiza") ||
-    t.includes("update")
+    t.includes(
+      "almacenamiento"
+    ) ||
+    t.includes(
+      "espacio"
+    )
   ) {
 
-    openApp("update");
-
-    return "Abriendo Aido Update. 🔄";
+    return (
+      "Tu AidoPC tiene configurado 1 TB de almacenamiento. 💾"
+    );
 
   }
 
 
   if (
-    t.includes("almacenamiento") ||
-    t.includes("espacio")
+    t.includes(
+      "qué puedes hacer"
+    ) ||
+    t.includes(
+      "que puedes hacer"
+    )
   ) {
 
-    return "Tu AidoPC tiene configurado 1 TB de almacenamiento. 💾";
+    return (
+      "Puedo conversar contigo, abrir aplicaciones, darte datos curiosos y ayudarte a moverte por AidoOS. En la versión de PC iremos añadiendo capacidades reales."
+    );
 
   }
 
 
   if (
-    t.includes("hola") ||
-    t.includes("hey") ||
-    t.includes("buenas")
+    t.includes(
+      "quién eres"
+    ) ||
+    t.includes(
+      "quien eres"
+    )
+  ) {
+
+    return (
+      "Soy AidoIA, el asistente integrado de AidoOS. Estoy hecha para ayudarte a usar el sistema de una forma natural."
+    );
+
+  }
+
+
+  /*
+    CONVERSACIÓN
+  */
+
+  if (
+    t.includes(
+      "hola"
+    ) ||
+    t.includes(
+      "hey"
+    ) ||
+    t.includes(
+      "buenas"
+    )
   ) {
 
     return random([
 
-      "¡Qué onda, Aldeano! 😎",
+      "¡Qué onda, Aldeano! 😎 ¿Qué hacemos?",
 
       "¡Buenas! AidoIA está lista.",
 
-      "¡Hey! ¿Qué hacemos hoy?",
+      "¡Hey! Todo funcionando por aquí. 🤖",
 
-      "¡Hola! Todo funcionando por aquí. 🤖"
-
-    ]);
-
-  }
-
-
-  if (
-    t.includes("quién eres") ||
-    t.includes("quien eres")
-  ) {
-
-    return "Soy AidoIA, el asistente integrado de AidoOS. Mi objetivo es ayudarte a usar el sistema de una manera natural.";
-
-  }
-
-
-  if (
-    t.includes("qué puedes hacer") ||
-    t.includes("que puedes hacer")
-  ) {
-
-    return "Puedo conversar contigo, abrir aplicaciones, darte datos curiosos, ayudarte con AidoOS y controlar funciones que vayamos incorporando.";
-
-  }
-
-
-  if (
-    t.includes("dato curioso") ||
-    t.includes("dato")
-  ) {
-
-    return random([
-
-      "Los pulpos tienen tres corazones. 🐙",
-
-      "La luz del Sol tarda unos 8 minutos y 20 segundos en llegar a la Tierra. ☀️",
-
-      "Los tiburones existen desde antes que los árboles. 🦈",
-
-      "Un día en Venus dura más que su año. 🪐",
-
-      "Los relámpagos pueden calentar el aire a temperaturas enormes durante un instante. ⚡"
+      "¡Hola! Cuéntame qué necesitas."
 
     ]);
 
@@ -1640,7 +3427,47 @@ function AidoAIResponse(text) {
 
 
   if (
-    t.includes("gracias")
+    t.includes(
+      "cómo estás"
+    ) ||
+    t.includes(
+      "como estas"
+    )
+  ) {
+
+    return (
+      "Funcionando bien y lista para ayudarte. ⚡"
+    );
+
+  }
+
+
+  if (
+    t.includes(
+      "dato curioso"
+    ) ||
+    t.includes(
+      "dime un dato"
+    ) ||
+    t.includes(
+      "curiosidad"
+    )
+  ) {
+
+    return (
+      random(
+        facts
+      ) +
+      " 🧠"
+    );
+
+  }
+
+
+  if (
+    t.includes(
+      "gracias"
+    )
   ) {
 
     return random([
@@ -1658,693 +3485,140 @@ function AidoAIResponse(text) {
 
   return random([
 
-    "Entiendo. Cuéntame un poco más.",
+    "Te sigo. Cuéntame un poco más.",
 
-    "Buena pregunta. Esa función todavía está creciendo en AidoIA.",
+    "Buena pregunta. Esa capacidad todavía está creciendo en AidoIA.",
 
-    "Interesante. Podemos añadir esa capacidad a AidoOS.",
+    "Interesante. Esa función la podemos añadir a AidoOS.",
 
-    "Te sigo. ¿Quieres que lo hagamos desde AidoOS?",
+    "Entiendo. Podemos trabajar con eso desde AidoOS.",
 
-    "Todavía estoy aprendiendo esa parte, pero podemos construirla."
+    "No necesito un comando para hablar contigo; dime lo que tengas en mente."
 
   ]);
 
 }
 
 
-function random(array) {
-
-  return array[
-    Math.floor(
-      Math.random() *
-      array.length
-    )
-  ];
-
-}
-
-
 /* =====================================================
-   AIDOSTORE
-===================================================== */
-
-const storeApps = [
-
-  {
-    id: "aido-games",
-    name: "AidoGames",
-    icon: "🎮",
-    category: "Juegos",
-    size: "245 MB",
-    description: "Centro de juegos de AidoOS."
-  },
-
-  {
-    id: "aido-music",
-    name: "AidoMusic",
-    icon: "🎵",
-    category: "Música",
-    size: "85 MB",
-    description: "Escucha tu propia música."
-  },
-
-  {
-    id: "aido-office",
-    name: "AidoOffice",
-    icon: "📘",
-    category: "Trabajo",
-    size: "380 MB",
-    description: "Documentos, hojas y presentaciones."
-  },
-
-  {
-    id: "aido-paint",
-    name: "Aido Paint",
-    icon: "🎨",
-    category: "Herramientas",
-    size: "72 MB",
-    description: "Dibuja y crea imágenes."
-  },
-
-  {
-    id: "aido-notes",
-    name: "Notas",
-    icon: "📝",
-    category: "Trabajo",
-    size: "18 MB",
-    description: "Escribe y guarda notas."
-  },
-
-  {
-    id: "aido-racing",
-    name: "Aido Racing",
-    icon: "🏎️",
-    category: "Juegos",
-    size: "620 MB",
-    description: "Juego de carreras arcade."
-  },
-
-  {
-    id: "blockworld",
-    name: "BlockWorld",
-    icon: "🧱",
-    category: "Juegos",
-    size: "410 MB",
-    description: "Sandbox de construcción original."
-  },
-
-  {
-    id: "aido-space",
-    name: "Aido Space",
-    icon: "🚀",
-    category: "Juegos",
-    size: "330 MB",
-    description: "Explora el espacio."
-  }
-
-];
-
-
-function renderStore() {
-
-  return `
-
-    <div
-      class="app-page"
-      id="storePage"
-    >
-
-      <div class="app-title">
-        AidoStore
-      </div>
-
-      <div class="app-subtitle">
-        Aplicaciones, juegos, música y más para AidoPC.
-      </div>
-
-
-      <input
-        class="store-search"
-        id="storeSearch"
-        placeholder="Buscar apps y juegos..."
-      >
-
-
-      <div class="store-categories">
-
-        <button
-          class="store-category active"
-          onclick="filterStore('Todos')"
-        >
-          Todos
-        </button>
-
-        <button
-          class="store-category"
-          onclick="filterStore('Juegos')"
-        >
-          🎮 Juegos
-        </button>
-
-        <button
-          class="store-category"
-          onclick="filterStore('Trabajo')"
-        >
-          📘 Trabajo
-        </button>
-
-        <button
-          class="store-category"
-          onclick="filterStore('Música')"
-        >
-          🎵 Música
-        </button>
-
-        <button
-          class="store-category"
-          onclick="filterStore('Herramientas')"
-        >
-          🛠️ Herramientas
-        </button>
-
-      </div>
-
-
-      <div
-        class="store-grid"
-        id="storeGrid"
-      ></div>
-
-    </div>
-
-  `;
-
-}
-
-
-setTimeout(
-  () => {
-
-    const search =
-      document.getElementById(
-        "storeSearch"
-      );
-
-    if (search) {
-
-      search.addEventListener(
-        "input",
-        () => {
-
-          renderStoreCards(
-            search.value
-          );
-
-        }
-      );
-
-    }
-
-  },
-  100
-);
-
-
-function renderStoreCards(
-  search = "",
-  category = "Todos"
-) {
-
-  const grid =
-    document.getElementById(
-      "storeGrid"
-    );
-
-  if (!grid) return;
-
-
-  const filtered =
-    storeApps.filter(
-      app => {
-
-        const matchSearch =
-          app.name
-            .toLowerCase()
-            .includes(
-              search.toLowerCase()
-            );
-
-        const matchCategory =
-          category === "Todos" ||
-          app.category === category;
-
-        return (
-          matchSearch &&
-          matchCategory
-        );
-
-      }
-    );
-
-
-  grid.innerHTML =
-    filtered.map(
-      app => {
-
-        const installed =
-          state.installations[
-            app.id
-          ];
-
-
-        return `
-
-          <div class="store-card">
-
-            <div class="store-card-icon">
-              ${app.icon}
-            </div>
-
-            <h4>
-              ${app.name}
-            </h4>
-
-            <p>
-              ${app.description}
-              <br>
-              ${app.size}
-            </p>
-
-            <button
-              class="${installed ? "installed" : ""}"
-              onclick="
-                ${
-                  installed
-                    ? `openInstalledApp('${app.id}')`
-                    : `installStoreApp('${app.id}')`
-                }
-              "
-            >
-              ${
-                installed
-                  ? "✓ Instalado · Abrir"
-                  : "Instalar"
-              }
-            </button>
-
-          </div>
-
-        `;
-
-      }
-    )
-    .join("");
-
-}
-
-
-function filterStore(category) {
-
-  renderStoreCards(
-    document.getElementById(
-      "storeSearch"
-    )?.value || "",
-    category
-  );
-
-}
-
-
-function installStoreApp(appId) {
-
-  const app =
-    storeApps.find(
-      x => x.id === appId
-    );
-
-  if (!app) return;
-
-
-  let progress = 0;
-
-
-  showToast(
-    `📥 Preparando ${app.name}...`
-  );
-
-
-  const interval =
-    setInterval(
-      () => {
-
-        progress +=
-          Math.floor(
-            Math.random() * 13
-          ) + 5;
-
-
-        if (progress > 100)
-          progress = 100;
-
-
-        showToast(
-          `📥 Descargando ${app.name} · ${progress}%`
-        );
-
-
-        if (progress >= 100) {
-
-          clearInterval(
-            interval
-          );
-
-
-          showToast(
-            `⚙️ Instalando ${app.name}...`
-          );
-
-
-          setTimeout(
-            () => {
-
-              state.installations[
-                appId
-              ] = {
-
-                name: app.name,
-
-                size: app.size,
-
-                path:
-                  `AidoPC / Aplicaciones / AidoStore / ${app.name}`,
-
-                installed:
-                  new Date()
-                    .toLocaleString(
-                      "es-MX"
-                    )
-
-              };
-
-
-              localStorage.setItem(
-                "aido_installations",
-                JSON.stringify(
-                  state.installations
-                )
-              );
-
-
-              addNotification(
-                "AidoStore",
-                `${app.name} se instaló correctamente.`
-              );
-
-
-              showToast(
-                `✅ ${app.name} instalado`
-              );
-
-
-              renderStoreCards();
-
-            },
-            1300
-          );
-
-        }
-
-      },
-      350
-    );
-
-}
-
-
-function openInstalledApp(
-  appId
-) {
-
-  const mapping = {
-
-    "aido-games": "games",
-
-    "aido-music": "music",
-
-    "aido-office": "office",
-
-    "aido-paint": "paint",
-
-    "aido-notes": "notes",
-
-    "aido-racing": "games",
-
-    "blockworld": "games",
-
-    "aido-space": "games"
-
-  };
-
-
-  const target =
-    mapping[appId];
-
-  if (target)
-    openApp(target);
-
-}
-
-
-/* =====================================================
-   BROWSER
-===================================================== */
-
-function renderBrowser() {
-
-  return `
-
-    <div class="browser">
-
-      <div class="browser-toolbar">
-
-        <button
-          onclick="browserHome()"
-        >
-          ◀
-        </button>
-
-        <button
-          onclick="browserReload()"
-        >
-          ↻
-        </button>
-
-        <input
-          class="browser-url"
-          id="browserUrl"
-          value="https://example.com"
-        >
-
-        <button
-          onclick="browserGo()"
-        >
-          →
-        </button>
-
-        <button
-          onclick="browserExternal()"
-        >
-          ↗
-        </button>
-
-      </div>
-
-
-      <div class="browser-info">
-        Aido NavegerPRO · Usa la conexión de tu navegador.
-        Algunas páginas bloquean la visualización dentro de otra web.
-      </div>
-
-
-      <iframe
-        class="browser-frame"
-        id="browserFrame"
-        src="https://example.com"
-        title="Aido NavegerPRO"
-      ></iframe>
-
-    </div>
-
-  `;
-
-}
-
-
-function browserGo() {
-
-  const input =
-    document.getElementById(
-      "browserUrl"
-    );
-
-  const frame =
-    document.getElementById(
-      "browserFrame"
-    );
-
-  if (!input || !frame)
-    return;
-
-
-  let url =
-    input.value.trim();
-
-
-  if (!url)
-    return;
-
-
-  if (
-    !url.startsWith(
-      "http://"
-    ) &&
-    !url.startsWith(
-      "https://"
-    )
-  ) {
-
-    if (
-      url.includes(".")
-    ) {
-
-      url =
-        "https://" +
-        url;
-
-    } else {
-
-      url =
-        "https://www.google.com/search?q=" +
-        encodeURIComponent(
-          url
-        );
-
-    }
-
-  }
-
-
-  input.value = url;
-
-  frame.src = url;
-
-}
-
-
-function browserExternal() {
-
-  const input =
-    document.getElementById(
-      "browserUrl"
-    );
-
-  if (!input) return;
-
-  let url =
-    input.value.trim();
-
-  if (
-    !url.startsWith(
-      "http"
-    )
-  ) {
-
-    url =
-      "https://" +
-      url;
-
-  }
-
-  window.open(
-    url,
-    "_blank"
-  );
-
-}
-
-
-function browserHome() {
-
-  const input =
-    document.getElementById(
-      "browserUrl"
-    );
-
-  const frame =
-    document.getElementById(
-      "browserFrame"
-    );
-
-  if (!input || !frame)
-    return;
-
-  input.value =
-    "https://example.com";
-
-  frame.src =
-    "https://example.com";
-
-}
-
-
-function browserReload() {
-
-  const frame =
-    document.getElementById(
-      "browserFrame"
-    );
-
-  if (frame)
-    frame.src =
-      frame.src;
-
-}
-
-
-/* =====================================================
-   SETTINGS
+   CONFIGURACIÓN
 ===================================================== */
 
 const settingsSections = [
 
-  ["inicio", "🏠", "Inicio"],
+  [
+    "inicio",
+    "🏠",
+    "Inicio"
+  ],
 
-  ["sistema", "💻", "Sistema"],
+  [
+    "sistema",
+    "💻",
+    "Sistema"
+  ],
 
-  ["bluetooth", "🔵", "Bluetooth y dispositivos"],
+  [
+    "bluetooth",
+    "🔵",
+    "Bluetooth y dispositivos"
+  ],
 
-  ["red", "📶", "Red e Internet"],
+  [
+    "red",
+    "📶",
+    "Red e Internet"
+  ],
 
-  ["personalizacion", "🎨", "Personalización"],
+  [
+    "personalizacion",
+    "🎨",
+    "Personalización"
+  ],
 
-  ["apps", "📦", "Aplicaciones"],
+  [
+    "apps",
+    "📦",
+    "Aplicaciones"
+  ],
 
-  ["cuentas", "👤", "Cuentas"],
+  [
+    "cuentas",
+    "👤",
+    "Cuentas"
+  ],
 
-  ["hora", "🕒", "Hora e idioma"],
+  [
+    "hora",
+    "🕒",
+    "Hora e idioma"
+  ],
 
-  ["juegos", "🎮", "Juegos"],
+  [
+    "juegos",
+    "🎮",
+    "Juegos"
+  ],
 
-  ["accesibilidad", "♿", "Accesibilidad"],
+  [
+    "accesibilidad",
+    "♿",
+    "Accesibilidad"
+  ],
 
-  ["privacidad", "🔐", "Privacidad y seguridad"],
+  [
+    "privacidad",
+    "🔐",
+    "Privacidad y seguridad"
+  ],
 
-  ["actualizaciones", "🔄", "Aido Update"],
+  [
+    "actualizaciones",
+    "🔄",
+    "Aido Update"
+  ],
 
-  ["aidophone", "📱", "Aidophone"],
+  [
+    "aidophone",
+    "📱",
+    "Aidophone"
+  ],
 
-  ["ia", "🤖", "AidoIA"]
+  [
+    "ia",
+    "🤖",
+    "AidoIA"
+  ],
+
+  [
+    "almacenamiento",
+    "💾",
+    "Almacenamiento"
+  ],
+
+  [
+    "notificaciones",
+    "🔔",
+    "Notificaciones"
+  ],
+
+  [
+    "multitarea",
+    "🪟",
+    "Multitarea"
+  ],
+
+  [
+    "sonido",
+    "🔊",
+    "Sonido"
+  ],
+
+  [
+    "energia",
+    "⚡",
+    "Energía"
+  ]
 
 ];
 
@@ -2365,11 +3639,18 @@ function renderSettings() {
             ) => `
 
               <button
-                class="settings-nav ${index === 0 ? "active" : ""}"
-                onclick="changeSettings('${id}', this)"
+                type="button"
+                class="settings-nav ${
+                  index === 0
+                    ? "active"
+                    : ""
+                }"
+                data-setting="${id}"
               >
+
                 ${icon}
-                ${name}
+                ${escapeHTML(name)}
+
               </button>
 
             `
@@ -2382,11 +3663,7 @@ function renderSettings() {
       <main
         class="settings-content"
         id="settingsContent"
-      >
-
-        ${settingsContent("inicio")}
-
-      </main>
+      ></main>
 
     </div>
 
@@ -2395,328 +3672,335 @@ function renderSettings() {
 }
 
 
-function changeSettings(
-  id,
-  button
+function wireSettings(
+  content
 ) {
 
-  document
-    .querySelectorAll(
-      ".settings-nav"
-    )
-    .forEach(
-      x =>
-        x.classList.remove(
-          "active"
-        )
+  const page =
+    content.querySelector(
+      "#settingsContent"
     );
 
 
-  button.classList.add(
-    "active"
+  if (!page) return;
+
+
+  const buttons =
+    content.querySelectorAll(
+      "[data-setting]"
+    );
+
+
+  buttons.forEach(
+    button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          buttons.forEach(
+            item =>
+              item.classList.remove(
+                "active"
+              )
+          );
+
+
+          button.classList.add(
+            "active"
+          );
+
+
+          page.innerHTML =
+            settingsPage(
+              button.dataset.setting
+            );
+
+
+          wireSettingsActions(
+            page
+          );
+
+        }
+      );
+
+    }
   );
 
 
-  document
-    .getElementById(
-      "settingsContent"
-    )
-    .innerHTML =
-    settingsContent(id);
+  page.innerHTML =
+    settingsPage(
+      "inicio"
+    );
+
+
+  wireSettingsActions(
+    page
+  );
 
 }
 
 
-function settingsContent(
+function settingsPage(
   id
 ) {
 
+  const section =
+    settingsSections.find(
+      x =>
+        x[0] === id
+    ) ||
+    settingsSections[0];
+
+
+  const title =
+    section[1] +
+    " " +
+    section[2];
+
+
   const data = {
 
-    inicio: {
-
-      title: "Inicio",
-
-      text:
-        "Personaliza la experiencia inicial de AidoOS.",
-
-      cards: [
-        "Aplicaciones ancladas",
+    inicio: [
+      "Controla lo que ves primero en AidoOS.",
+      [
+        "Apps ancladas",
         "Widgets",
-        "Búsqueda",
-        "Recomendaciones"
+        "Recomendaciones",
+        "Búsqueda"
       ]
+    ],
 
-    },
-
-    sistema: {
-
-      title: "Sistema",
-
-      text:
-        "Información de tu AidoPC.",
-
-      cards: [
-        "AidoPC",
-        "Procesador: Detectando",
-        "Memoria: Detectando",
-        "Almacenamiento: 1 TB",
-        "Sistema: AidoOS"
+    sistema: [
+      "Información de tu AidoPC.",
+      [
+        "Nombre del dispositivo: AidoPC",
+        "AidoOS 0.1.0 Beta",
+        "Animaciones activadas",
+        "Modo launcher preparado"
       ]
+    ],
 
-    },
-
-    bluetooth: {
-
-      title:
-        "Bluetooth y dispositivos",
-
-      text:
-        "Administra dispositivos conectados.",
-
-      cards: [
+    bluetooth: [
+      "Administra dispositivos conectados.",
+      [
         "Bluetooth",
         "Aidophone",
-        "Mouse",
         "Teclado",
+        "Mouse",
         "Audio"
       ]
+    ],
 
-    },
-
-    red: {
-
-      title:
-        "Red e Internet",
-
-      text:
-        "Conexión del dispositivo.",
-
-      cards: [
+    red: [
+      "Conexión de red de AidoPC.",
+      [
         "Wi-Fi: Conectado",
         "Internet: Disponible",
         "VPN",
         "Uso de datos"
       ]
+    ],
 
-    },
-
-    personalizacion: {
-
-      title:
-        "Personalización",
-
-      text:
-        "Haz que AidoOS se vea como tú quieras.",
-
-      cards: [
+    personalizacion: [
+      "Haz que AidoOS tenga tu estilo.",
+      [
         "Fondo de pantalla",
-        "Colores",
-        "Modo oscuro",
+        "Colores de énfasis",
+        "Modo oscuro / claro",
         "Transparencia",
         "Animaciones",
-        "Fuente",
+        "Fuente pixel",
         "Barra de tareas",
         "Widgets"
       ]
+    ],
 
-    },
-
-    apps: {
-
-      title:
-        "Aplicaciones",
-
-      text:
-        "Administra tus aplicaciones instaladas.",
-
-      cards: [
+    apps: [
+      "Administra las apps del sistema.",
+      [
         "Aplicaciones instaladas",
         "Aplicaciones predeterminadas",
-        "AidoStore",
         "Permisos",
+        "AidoStore",
         "Desinstalación"
       ]
+    ],
 
-    },
-
-    cuentas: {
-
-      title:
-        "Cuentas",
-
-      text:
-        "Tu cuenta de AidoPC.",
-
-      cards: [
+    cuentas: [
+      "Cuenta local de AidoPC.",
+      [
         "Aldeano",
         "Perfil",
         "Inicio de sesión",
         "Sincronización"
       ]
+    ],
 
-    },
-
-    hora: {
-
-      title:
-        "Hora e idioma",
-
-      text:
-        "Configura fecha, hora e idioma.",
-
-      cards: [
+    hora: [
+      "Fecha, hora e idioma.",
+      [
         "Fecha y hora",
         "Zona horaria",
-        "Idioma: Español",
+        "Español",
         "Formato regional"
       ]
+    ],
 
-    },
-
-    juegos: {
-
-      title:
-        "Juegos",
-
-      text:
-        "Configuración de AidoGames.",
-
-      cards: [
+    juegos: [
+      "Opciones para AidoGames.",
+      [
         "Modo juego",
         "Rendimiento",
         "Controladores",
-        "AidoGames",
         "Grabación"
       ]
+    ],
 
-    },
-
-    accesibilidad: {
-
-      title:
-        "Accesibilidad",
-
-      text:
-        "Haz AidoOS más cómodo de utilizar.",
-
-      cards: [
-        "Texto",
+    accesibilidad: [
+      "Opciones de accesibilidad.",
+      [
+        "Tamaño de texto",
         "Contraste",
         "Cursor",
         "Subtítulos",
         "Narrador"
       ]
+    ],
 
-    },
-
-    privacidad: {
-
-      title:
-        "Privacidad y seguridad",
-
-      text:
-        "Controla tu privacidad.",
-
-      cards: [
+    privacidad: [
+      "Control de privacidad de AidoOS.",
+      [
         "Permisos",
-        "Aplicaciones",
-        "Navegador",
-        "Datos de AidoOS"
+        "Datos del navegador",
+        "Apps",
+        "Privacidad local"
       ]
+    ],
 
-    },
-
-    actualizaciones: {
-
-      title:
-        "Aido Update",
-
-      text:
-        "Mantén AidoOS actualizado.",
-
-      cards: [
+    actualizaciones: [
+      "Mantén AidoOS preparado para nuevas versiones.",
+      [
         "Buscar actualizaciones",
         "Historial",
         "Actualizaciones automáticas"
       ]
+    ],
 
-    },
-
-    aidophone: {
-
-      title:
-        "Aidophone",
-
-      text:
-        "Conecta tu teléfono con AidoPC.",
-
-      cards: [
+    aidophone: [
+      "Conecta tu teléfono con AidoPC.",
+      [
         "Conectar Aidophone",
         "Notificaciones",
-        "Archivos",
         "Fotos",
-        "Llamadas",
-        "Mensajes"
+        "Archivos",
+        "Música",
+        "Portapapeles"
       ]
+    ],
 
-    },
-
-    ia: {
-
-      title:
-        "AidoIA",
-
-      text:
-        "Configura tu asistente.",
-
-      cards: [
-        "AidoIA",
-        "Voz",
+    ia: [
+      "Configuración de AidoIA.",
+      [
         "Personalidad",
         "Historial",
-        "Permisos"
+        "Voz",
+        "Permisos",
+        "Modo asistente"
       ]
+    ],
 
-    }
+    almacenamiento: [
+      "Capacidad virtual de AidoPC.",
+      [
+        "SSD: 1 TB",
+        "Usado: 258 GB",
+        "Libre: 742 GB",
+        "Aplicaciones",
+        "Juegos"
+      ]
+    ],
+
+    notificaciones: [
+      "Controla las notificaciones.",
+      [
+        "Notificaciones activadas",
+        "No molestar",
+        "Centro de notificaciones"
+      ]
+    ],
+
+    multitarea: [
+      "Administra ventanas y escritorios.",
+      [
+        "Ventanas pequeñas",
+        "Escritorios virtuales",
+        "Ajuste de ventanas"
+      ]
+    ],
+
+    sonido: [
+      "Control del audio.",
+      [
+        "Volumen",
+        "Dispositivo de salida",
+        "Sonidos del sistema"
+      ]
+    ],
+
+    energia: [
+      "Opciones de energía.",
+      [
+        "Ahorro de energía",
+        "Batería",
+        "Suspensión"
+      ]
+    ]
 
   };
 
 
-  const section =
-    data[id];
+  const sectionData =
+    data[id] ||
+    data.inicio;
 
 
   return `
 
     <h2>
-      ${section.title}
+      ${escapeHTML(title)}
     </h2>
 
+
     <p>
-      ${section.text}
+      ${escapeHTML(
+        sectionData[0]
+      )}
     </p>
 
-    ${section.cards
+
+    ${sectionData[1]
       .map(
         card => `
 
           <div class="settings-card">
 
             <strong>
-              ${card}
+              ${escapeHTML(card)}
             </strong>
 
-            <br>
-
             <small>
-              Configuración de ${card.toLowerCase()}.
+              ${escapeHTML(
+                settingDescription(
+                  card
+                )
+              )}
             </small>
 
-            <br>
-
             <button
-              onclick="showToast('⚙️ ${card}: función preparada para AidoOS')"
+              type="button"
+              class="setting-action"
+              data-setting-action="${escapeHTML(card)}"
             >
               Configurar
             </button>
@@ -2732,6 +4016,97 @@ function settingsContent(
 }
 
 
+function settingDescription(
+  card
+) {
+
+  if (
+    card.includes(
+      "1 TB"
+    )
+  ) {
+
+    return (
+      "Almacenamiento total de AidoPC."
+    );
+
+  }
+
+
+  if (
+    card.includes(
+      "258 GB"
+    )
+  ) {
+
+    return (
+      "Espacio utilizado en la simulación."
+    );
+
+  }
+
+
+  if (
+    card.includes(
+      "742 GB"
+    )
+  ) {
+
+    return (
+      "Espacio libre mostrado."
+    );
+
+  }
+
+
+  if (
+    card.includes(
+      "Aldeano"
+    )
+  ) {
+
+    return (
+      "Usuario principal de AidoPC."
+    );
+
+  }
+
+
+  return (
+    "Opciones y controles de esta función."
+  );
+
+}
+
+
+function wireSettingsActions(
+  page
+) {
+
+  page
+    .querySelectorAll(
+      "[data-setting-action]"
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            showToast(
+              `⚙️ ${button.dataset.settingAction} abierto`
+            );
+
+          }
+        );
+
+      }
+    );
+
+}
+
+
 /* =====================================================
    OFFICE
 ===================================================== */
@@ -2743,7 +4118,7 @@ function renderOffice() {
     <div class="app-page">
 
       <div class="app-title">
-        AidoOffice
+        📘 AidoOffice
       </div>
 
       <div class="app-subtitle">
@@ -2755,7 +4130,7 @@ function renderOffice() {
 
         <div
           class="office-card"
-          onclick="openOfficeEditor('michord')"
+          data-office="michord"
         >
 
           <div class="office-icon">
@@ -2775,7 +4150,7 @@ function renderOffice() {
 
         <div
           class="office-card"
-          onclick="openOfficeEditor('micel')"
+          data-office="micel"
         >
 
           <div class="office-icon">
@@ -2795,7 +4170,7 @@ function renderOffice() {
 
         <div
           class="office-card"
-          onclick="openOfficeEditor('mipoint')"
+          data-office="mipoint"
         >
 
           <div class="office-icon">
@@ -2815,7 +4190,7 @@ function renderOffice() {
 
         <div
           class="office-card"
-          onclick="openOfficeEditor('miaula')"
+          data-office="miaula"
         >
 
           <div class="office-icon">
@@ -2841,6 +4216,34 @@ function renderOffice() {
 }
 
 
+function wireOffice(
+  content
+) {
+
+  content
+    .querySelectorAll(
+      "[data-office]"
+    )
+    .forEach(
+      card => {
+
+        card.addEventListener(
+          "click",
+          () => {
+
+            openOfficeEditor(
+              card.dataset.office
+            );
+
+          }
+        );
+
+      }
+    );
+
+}
+
+
 function openOfficeEditor(
   type
 ) {
@@ -2848,11 +4251,8 @@ function openOfficeEditor(
   const names = {
 
     michord: "michord",
-
     micel: "micel",
-
     mipoint: "mipoint",
-
     miaula: "miaula"
 
   };
@@ -2864,26 +4264,41 @@ function openOfficeEditor(
 
 
   const id =
-    "office-editor-" +
-    Date.now();
+    `office-${type}-${Date.now()}`;
 
 
   const win =
     document.createElement(
-      "div"
+      "section"
     );
+
 
   win.className =
     "aido-window";
 
+
   win.dataset.id =
     id;
 
+
+  win.dataset.appId =
+    type;
+
+
   win.style.left =
-    "140px";
+    "160px";
+
 
   win.style.top =
     "90px";
+
+
+  win.style.zIndex =
+    ++state.zIndex;
+
+
+  win.style.resize =
+    "both";
 
 
   win.innerHTML = `
@@ -2891,20 +4306,31 @@ function openOfficeEditor(
     <div class="window-header">
 
       <div class="window-title">
-        📘 ${title}
+
+        <span class="window-title-icon">
+          📘
+        </span>
+
+        <span>
+          ${escapeHTML(title)}
+        </span>
+
       </div>
+
 
       <div class="window-controls">
 
         <button
           class="window-control"
+          type="button"
           data-window-action="minimize"
         >
-          ─
+          —
         </button>
 
         <button
           class="window-control"
+          type="button"
           data-window-action="suspend"
         >
           ⏸
@@ -2912,6 +4338,7 @@ function openOfficeEditor(
 
         <button
           class="window-control close"
+          type="button"
           data-window-action="close"
         >
           ×
@@ -2922,41 +4349,64 @@ function openOfficeEditor(
     </div>
 
 
-    <div class="editor">
+    <div class="window-content editor">
 
       <div class="editor-toolbar">
 
-        <button onclick="document.execCommand('bold')">
-          B
+        <button
+          type="button"
+          data-cmd="bold"
+        >
+          <b>B</b>
         </button>
 
-        <button onclick="document.execCommand('italic')">
-          I
+        <button
+          type="button"
+          data-cmd="italic"
+        >
+          <i>I</i>
         </button>
 
-        <button onclick="document.execCommand('underline')">
-          U
+        <button
+          type="button"
+          data-cmd="underline"
+        >
+          <u>U</u>
         </button>
 
-        <button onclick="saveEditor()">
+        <button
+          type="button"
+          data-save-editor="true"
+        >
           💾 Guardar
         </button>
 
       </div>
 
+
       <div
         class="editor-area"
         contenteditable="true"
       >
-        <h1>${title}</h1>
-        <p>Empieza a escribir aquí...</p>
+
+        <h1>
+          ${escapeHTML(title)}
+        </h1>
+
+        <p>
+          Empieza a escribir aquí...
+        </p>
+
       </div>
 
     </div>
 
+
     <div class="suspended-screen">
 
-      ⏸
+      <span style="font-size:36px">
+        ⏸
+      </span>
 
       <strong>
         Aplicación suspendida
@@ -2971,25 +4421,111 @@ function openOfficeEditor(
     .getElementById(
       "windowLayer"
     )
-    .appendChild(win);
+    .appendChild(
+      win
+    );
 
 
   state.windows.set(
     id,
     {
-      appId: type,
-      element: win,
-      minimized: false,
-      suspended: false,
+
+      id,
+
+      appId:
+        type,
+
+      element:
+        win,
+
       desktop:
-        state.currentDesktop
+        state.currentDesktop,
+
+      minimized:
+        false,
+
+      suspended:
+        false
+
     }
   );
 
 
-  makeDraggable(win);
+  state.desktops[
+    state.currentDesktop
+  ].push(
+    id
+  );
 
-  focusWindow(win);
+
+  makeDraggable(
+    win
+  );
+
+
+  setupWindowInteractions(
+    win
+  );
+
+
+  createTaskTab(
+    id,
+    {
+      title,
+      icon: "📘"
+    }
+  );
+
+
+  focusWindow(
+    win
+  );
+
+
+  win
+    .querySelectorAll(
+      "[data-cmd]"
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            document.execCommand(
+              button.dataset.cmd,
+              false,
+              null
+            );
+
+          }
+        );
+
+      }
+    );
+
+
+  const save =
+    win.querySelector(
+      "[data-save-editor]"
+    );
+
+
+  if (save) {
+
+    save.addEventListener(
+      "click",
+      () => {
+
+        showToast(
+          `💾 ${title} guardado`
+        );
+
+      }
+    );
+
+  }
 
 }
 
@@ -3005,11 +4541,11 @@ function renderGames() {
     <div class="app-page">
 
       <div class="app-title">
-        AidoGames
+        🎮 AidoGames
       </div>
 
       <div class="app-subtitle">
-        Juegos propios para AidoOS.
+        Juegos originales listos para probar.
       </div>
 
 
@@ -3031,7 +4567,8 @@ function renderGames() {
           </p>
 
           <button
-            onclick="startRacingGame()"
+            type="button"
+            data-launch-game="racer"
           >
             Jugar
           </button>
@@ -3050,11 +4587,12 @@ function renderGames() {
           </h3>
 
           <p>
-            Construye tu propio mundo.
+            Construye tu mundo.
           </p>
 
           <button
-            onclick="startBlockGame()"
+            type="button"
+            data-launch-game="blocks"
           >
             Jugar
           </button>
@@ -3073,11 +4611,12 @@ function renderGames() {
           </h3>
 
           <p>
-            Pilota una nave espacial.
+            Despega y explora.
           </p>
 
           <button
-            onclick="startSpaceGame()"
+            type="button"
+            data-launch-game="space"
           >
             Jugar
           </button>
@@ -3092,15 +4631,16 @@ function renderGames() {
           </div>
 
           <h3>
-            GHA 5
+            GHA 5 · Demo
           </h3>
 
           <p>
-            Demo de mundo abierto original.
+            Demo original de mundo abierto.
           </p>
 
           <button
-            onclick="startGHAGame()"
+            type="button"
+            data-launch-game="gha"
           >
             Jugar demo
           </button>
@@ -3117,9 +4657,229 @@ function renderGames() {
 }
 
 
-function setupGames() {
+function wireGames(
+  content
+) {
 
-  // Preparado para futuras expansiones.
+  content
+    .querySelectorAll(
+      "[data-launch-game]"
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            launchGame(
+              button.dataset.launchGame
+            );
+
+          }
+        );
+
+      }
+    );
+
+}
+
+
+function launchGame(
+  type
+) {
+
+  if (
+    type === "racer"
+  ) {
+
+    startRacerGame();
+
+  }
+
+
+  else if (
+    type === "blocks"
+  ) {
+
+    startBlockGame();
+
+  }
+
+
+  else if (
+    type === "space"
+  ) {
+
+    startSpaceGame();
+
+  }
+
+
+  else {
+
+    startGHAGame();
+
+  }
+
+}
+
+
+/* =====================================================
+   VENTANA DE JUEGO
+===================================================== */
+
+function createGameWindow(
+  title,
+  icon = "🎮"
+) {
+
+  const id =
+    `game-${++state.windowNumber}`;
+
+
+  const win =
+    document.createElement(
+      "section"
+    );
+
+
+  win.className =
+    "aido-window";
+
+
+  win.dataset.id =
+    id;
+
+
+  win.dataset.appId =
+    "game";
+
+
+  win.style.left =
+    "130px";
+
+
+  win.style.top =
+    "80px";
+
+
+  win.style.zIndex =
+    ++state.zIndex;
+
+
+  win.style.resize =
+    "both";
+
+
+  win.innerHTML = `
+
+    <div class="window-header">
+
+      <div class="window-title">
+
+        <span class="window-title-icon">
+          ${icon}
+        </span>
+
+        <span>
+          ${escapeHTML(title)}
+        </span>
+
+      </div>
+
+
+      <div class="window-controls">
+
+        <button
+          class="window-control"
+          type="button"
+          data-window-action="minimize"
+        >
+          —
+        </button>
+
+        <button
+          class="window-control close"
+          type="button"
+          data-window-action="close"
+        >
+          ×
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="window-content"></div>
+
+  `;
+
+
+  document
+    .getElementById(
+      "windowLayer"
+    )
+    .appendChild(
+      win
+    );
+
+
+  state.windows.set(
+    id,
+    {
+
+      id,
+
+      appId:
+        "game",
+
+      element:
+        win,
+
+      desktop:
+        state.currentDesktop,
+
+      minimized:
+        false,
+
+      suspended:
+        false
+
+    }
+  );
+
+
+  state.desktops[
+    state.currentDesktop
+  ].push(
+    id
+  );
+
+
+  setupWindowInteractions(
+    win
+  );
+
+
+  createTaskTab(
+    id,
+    {
+      title,
+      icon
+    }
+  );
+
+
+  focusWindow(
+    win
+  );
+
+
+  return win.querySelector(
+    ".window-content"
+  );
 
 }
 
@@ -3128,27 +4888,51 @@ function setupGames() {
    AIDO RACER
 ===================================================== */
 
-function startRacingGame() {
+function startRacerGame() {
 
-  const win =
+  const content =
     createGameWindow(
-      "🏎️ Aido Racer"
+      "Aido Racer",
+      "🏎️"
     );
 
-  win.innerHTML = `
 
-    <div class="game-screen">
+  content.innerHTML = `
 
-      <div class="game-hud">
-        AIDO RACER · Usa ← →
-      </div>
+    <div
+      style="
+        height:100%;
+        position:relative;
+        background:#101418;
+      "
+    >
 
       <canvas
-        class="game-canvas"
         id="raceCanvas"
-        width="600"
-        height="380"
+        width="700"
+        height="420"
+        style="
+          display:block;
+          width:100%;
+          height:100%;
+          background:#111;
+        "
       ></canvas>
+
+
+      <div
+        style="
+          position:absolute;
+          left:10px;
+          top:10px;
+          padding:8px 10px;
+          border-radius:9px;
+          background:rgba(0,0,0,.55);
+          font-size:11px;
+        "
+      >
+        AIDO RACER · ← → para moverte
+      </div>
 
     </div>
 
@@ -3156,9 +4940,10 @@ function startRacingGame() {
 
 
   const canvas =
-    win.querySelector(
+    content.querySelector(
       "#raceCanvas"
     );
+
 
   const ctx =
     canvas.getContext(
@@ -3166,130 +4951,209 @@ function startRacingGame() {
     );
 
 
-  let carX = 280;
-
-  let enemyY = -50;
-
-  let score = 0;
+  let carX =
+    325;
 
 
-  const keys = {};
+  let enemyY =
+    -80;
+
+
+  let score =
+    0;
+
+
+  const keys =
+    {};
+
+
+  const keydown =
+    event => {
+
+      keys[event.key] =
+        true;
+
+    };
+
+
+  const keyup =
+    event => {
+
+      keys[event.key] =
+        false;
+
+    };
 
 
   window.addEventListener(
     "keydown",
-    e => keys[e.key] = true
+    keydown
   );
+
 
   window.addEventListener(
     "keyup",
-    e => keys[e.key] = false
+    keyup
   );
 
 
-  function loop() {
+  const loop =
+    () => {
 
-    ctx.clearRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+      if (
+        !document.body.contains(
+          canvas
+        )
+      ) {
 
-
-    // carretera
-
-    ctx.fillStyle =
-      "#24282d";
-
-    ctx.fillRect(
-      120,
-      0,
-      360,
-      canvas.height
-    );
+        window.removeEventListener(
+          "keydown",
+          keydown
+        );
 
 
-    // líneas
+        window.removeEventListener(
+          "keyup",
+          keyup
+        );
 
-    ctx.fillStyle =
-      "#eeeeee";
 
-    for (
-      let y = 0;
-      y < 400;
-      y += 60
-    ) {
+        return;
+
+      }
+
+
+      ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+
+      ctx.fillStyle =
+        "#20252a";
+
 
       ctx.fillRect(
-        295,
-        (y + score * 2) % 400,
-        10,
-        30
-      );
-
-    }
-
-
-    if (keys["ArrowLeft"])
-      carX -= 5;
-
-    if (keys["ArrowRight"])
-      carX += 5;
-
-
-    carX =
-      Math.max(
-        130,
-        Math.min(
-          430,
-          carX
-        )
+        120,
+        0,
+        460,
+        canvas.height
       );
 
 
-    enemyY += 4;
-
-    if (enemyY > 400) {
-
-      enemyY = -60;
-
-      score++;
-
-    }
+      ctx.fillStyle =
+        "#eee";
 
 
-    // enemigo
+      for (
+        let y = -40;
+        y < canvas.height + 40;
+        y += 70
+      ) {
 
-    ctx.fillStyle =
-      "#e53935";
+        ctx.fillRect(
+          345,
+          (y + score * 2) %
+            (canvas.height + 70),
+          10,
+          35
+        );
 
-    ctx.fillRect(
-      250,
-      enemyY,
-      55,
-      80
-    );
-
-
-    // jugador
-
-    ctx.fillStyle =
-      "#20e59b";
-
-    ctx.fillRect(
-      carX,
-      300,
-      55,
-      80
-    );
+      }
 
 
-    requestAnimationFrame(
-      loop
-    );
+      if (
+        keys.ArrowLeft
+      ) {
 
-  }
+        carX -= 6;
+
+      }
+
+
+      if (
+        keys.ArrowRight
+      ) {
+
+        carX += 6;
+
+      }
+
+
+      carX =
+        Math.max(
+          145,
+          Math.min(
+            500,
+            carX
+          )
+        );
+
+
+      enemyY +=
+        5;
+
+
+      if (
+        enemyY >
+        canvas.height + 20
+      ) {
+
+        enemyY =
+          -80;
+
+        score +=
+          1;
+
+      }
+
+
+      ctx.fillStyle =
+        "#e54343";
+
+
+      ctx.fillRect(
+        255,
+        enemyY,
+        55,
+        80
+      );
+
+
+      ctx.fillStyle =
+        "#20e59b";
+
+
+      ctx.fillRect(
+        carX,
+        canvas.height - 100,
+        55,
+        80
+      );
+
+
+      ctx.fillStyle =
+        "white";
+
+
+      ctx.font =
+        "14px Inter";
+
+
+      ctx.fillText(
+        `Puntos: ${score}`,
+        15,
+        canvas.height - 18
+      );
+
+
+      requestAnimationFrame(
+        loop
+      );
+
+    };
 
 
   loop();
@@ -3298,40 +5162,44 @@ function startRacingGame() {
 
 
 /* =====================================================
-   JUEGO BLOQUES
+   BLOCKWORLD
 ===================================================== */
 
 function startBlockGame() {
 
-  const win =
+  const content =
     createGameWindow(
-      "🧱 BlockWorld"
+      "BlockWorld",
+      "🧱"
     );
 
-  win.innerHTML = `
+
+  content.innerHTML = `
 
     <div
-      class="game-screen"
       style="
-        background:#75b8e8;
+        height:100%;
         display:grid;
         place-items:center;
+        background:#78b7e5;
       "
     >
 
-      <div style="
-        width:300px;
-        height:220px;
-        background:
-          linear-gradient(
-            #75b8e8 65%,
-            #55a844 65%
-          );
-        position:relative;
-        cursor:crosshair;
-      " id="blockWorld">
-
-      </div>
+      <div
+        id="blockWorld"
+        style="
+          position:relative;
+          width:360px;
+          height:260px;
+          overflow:hidden;
+          background:
+            linear-gradient(
+              #78b7e5 62%,
+              #55a747 62%
+            );
+          cursor:crosshair;
+        "
+      ></div>
 
     </div>
 
@@ -3339,7 +5207,7 @@ function startBlockGame() {
 
 
   const world =
-    win.querySelector(
+    content.querySelector(
       "#blockWorld"
     );
 
@@ -3353,37 +5221,45 @@ function startBlockGame() {
           "div"
         );
 
+
       block.style.position =
         "absolute";
 
-      block.style.left =
-        (
-          event.offsetX -
-          15
-        ) + "px";
-
-      block.style.top =
-        (
-          event.offsetY -
-          15
-        ) + "px";
 
       block.style.width =
         "30px";
 
+
       block.style.height =
         "30px";
+
+
+      block.style.left =
+        `${Math.max(
+          0,
+          event.offsetX - 15
+        )}px`;
+
+
+      block.style.top =
+        `${Math.max(
+          0,
+          event.offsetY - 15
+        )}px`;
+
 
       block.style.background =
         random([
           "#8b5a2b",
           "#65a845",
-          "#777",
-          "#d6b34a"
+          "#7b7d80",
+          "#d7b44d"
         ]);
 
+
       block.style.border =
-        "2px solid rgba(0,0,0,.2)";
+        "2px solid rgba(0,0,0,.18)";
+
 
       world.appendChild(
         block
@@ -3396,92 +5272,135 @@ function startBlockGame() {
 
 
 /* =====================================================
-   ESPACIO
+   AIDO SPACE
 ===================================================== */
 
 function startSpaceGame() {
 
-  const win =
+  const content =
     createGameWindow(
-      "🚀 Aido Space"
+      "Aido Space",
+      "🚀"
     );
 
-  win.innerHTML = `
+
+  content.innerHTML = `
 
     <div
       style="
         height:100%;
         background:
           radial-gradient(
-            circle,
-            #24315e,
+            circle at center,
+            #26386e,
             #03040a
           );
         display:grid;
         place-items:center;
-        color:white;
-        font-size:50px;
         cursor:pointer;
-      "
-      onclick="
-        this.querySelector('div').textContent =
-        '🚀 ¡Despegue!'
       "
     >
 
-      <div>
-        🚀
+      <div
+        style="
+          text-align:center;
+          color:white;
+        "
+      >
+
+        <div
+          style="
+            font-size:70px;
+          "
+        >
+          🚀
+        </div>
+
+        <div
+          style="
+            margin-top:10px;
+          "
+        >
+          Haz clic para despegar
+        </div>
+
       </div>
 
     </div>
 
   `;
 
+
+  const screen =
+    content.firstElementChild;
+
+
+  screen.addEventListener(
+    "click",
+    () =>
+      showToast(
+        "🚀 ¡Despegue de Aido Space!"
+      )
+  );
+
 }
 
 
+/* =====================================================
+   GHA 5 DEMO
+===================================================== */
+
 function startGHAGame() {
 
-  const win =
+  const content =
     createGameWindow(
-      "🏙️ GHA 5 · Demo"
+      "GHA 5 · Demo",
+      "🏙️"
     );
 
-  win.innerHTML = `
+
+  content.innerHTML = `
 
     <div
+      tabindex="0"
       style="
         height:100%;
-        background:
-          linear-gradient(
-            #66a8db 0 50%,
-            #555 50%
-          );
         position:relative;
         overflow:hidden;
+        background:
+          linear-gradient(
+            #68a8d9 0 50%,
+            #53565b 50%
+          );
+        outline:none;
       "
-      tabindex="0"
     >
 
-      <div style="
-        position:absolute;
-        bottom:25px;
-        left:45%;
-        font-size:45px;
-      ">
+      <div
+        style="
+          position:absolute;
+          bottom:28px;
+          left:45%;
+          font-size:48px;
+        "
+      >
         🚗
       </div>
 
-      <div style="
-        position:absolute;
-        top:15px;
-        left:15px;
-        background:rgba(0,0,0,.5);
-        padding:10px;
-        border-radius:8px;
-        font-size:11px;
-      ">
-        DEMO ORIGINAL · A / D para conducir
+
+      <div
+        style="
+          position:absolute;
+          top:12px;
+          left:12px;
+          background:rgba(0,0,0,.55);
+          padding:9px;
+          border-radius:9px;
+          color:white;
+          font-size:11px;
+        "
+      >
+        GHA 5 · Demo original · A / D
       </div>
 
     </div>
@@ -3492,97 +5411,159 @@ function startGHAGame() {
 
 
 /* =====================================================
-   CREAR VENTANA DE JUEGO
+   MÚSICA
 ===================================================== */
 
-function createGameWindow(
-  title
-) {
+function renderMusic() {
 
-  state.windowNumber++;
+  return `
 
-  const id =
-    "game-" +
-    state.windowNumber;
+    <div class="app-page">
 
-
-  const win =
-    document.createElement(
-      "div"
-    );
-
-  win.className =
-    "aido-window";
-
-  win.dataset.id =
-    id;
-
-  win.style.left =
-    "120px";
-
-  win.style.top =
-    "70px";
-
-  win.innerHTML = `
-
-    <div class="window-header">
-
-      <div class="window-title">
-        ${title}
+      <div class="app-title">
+        🎵 AidoMusic
       </div>
 
-      <div class="window-controls">
+      <div class="app-subtitle">
+        Escucha archivos de música que tengas en tu PC.
+      </div>
 
-        <button
-          class="window-control"
-          data-window-action="minimize"
-        >
-          ─
-        </button>
 
-        <button
-          class="window-control close"
-          data-window-action="close"
+      <div
+        class="settings-card"
+        style="
+          margin-top:18px;
+        "
+      >
+
+        <strong>
+          Biblioteca musical
+        </strong>
+
+        <p>
+          Selecciona archivos de audio
+          para reproducirlos.
+        </p>
+
+        <input
+          id="musicFiles"
+          type="file"
+          accept="audio/*"
+          multiple
         >
-          ×
-        </button>
 
       </div>
+
+
+      <div
+        id="musicList"
+        class="music-list"
+      ></div>
 
     </div>
 
-    <div class="window-content"></div>
-
   `;
 
-
-  document
-    .getElementById(
-      "windowLayer"
-    )
-    .appendChild(win);
+}
 
 
-  state.windows.set(
-    id,
-    {
-      appId: "game",
-      element: win,
-      minimized: false,
-      suspended: false,
-      desktop:
-        state.currentDesktop
+function wireMusic(
+  content
+) {
+
+  const input =
+    content.querySelector(
+      "#musicFiles"
+    );
+
+
+  const list =
+    content.querySelector(
+      "#musicList"
+    );
+
+
+  if (
+    !input ||
+    !list
+  )
+    return;
+
+
+  input.addEventListener(
+    "change",
+    () => {
+
+      list.innerHTML =
+        "";
+
+
+      [
+        ...input.files
+      ]
+      .forEach(
+        file => {
+
+          const url =
+            URL.createObjectURL(
+              file
+            );
+
+
+          const row =
+            document.createElement(
+              "div"
+            );
+
+
+          row.className =
+            "music-item";
+
+
+          row.innerHTML = `
+
+            <span
+              style="font-size:25px"
+            >
+              🎵
+            </span>
+
+            <div
+              style="flex:1"
+            >
+
+              <strong>
+                ${escapeHTML(file.name)}
+              </strong>
+
+
+              <audio
+                controls
+                style="
+                  width:100%;
+                  margin-top:7px;
+                "
+              >
+
+                <source
+                  src="${url}"
+                >
+
+              </audio>
+
+            </div>
+
+          `;
+
+
+          list.appendChild(
+            row
+          );
+
+        }
+      );
+
     }
-  );
-
-
-  makeDraggable(win);
-
-  focusWindow(win);
-
-
-  return win.querySelector(
-    ".window-content"
   );
 
 }
@@ -3602,7 +5583,9 @@ function renderAidophone() {
 
         <div class="phone-screen">
 
-          <strong>
+          <strong
+            style="font-size:18px"
+          >
             Aidophone
           </strong>
 
@@ -3610,41 +5593,55 @@ function renderAidophone() {
             Conexión con AidoPC
           </small>
 
+
           <div
             style="
               padding:10px;
               border-radius:10px;
-              background:rgba(32,229,155,.15);
+              background:
+                rgba(32,229,155,.15);
             "
           >
             🟢 AidoPC disponible
           </div>
 
+
           <button
-            onclick="
-              showToast('📱 Buscando Aidophone...')
-            "
+            id="connectPhone"
             style="
               padding:10px;
               border:0;
               border-radius:9px;
             "
           >
-            Buscar dispositivo
+            🔎 Buscar dispositivo
           </button>
 
+
           <small>
+
             Funciones preparadas:
+
             <br><br>
+
             🔔 Notificaciones
+
             <br>
+
             📁 Archivos
+
             <br>
+
             🖼️ Fotos
+
             <br>
+
             🎵 Música
+
             <br>
-            🔋 Batería
+
+            📋 Portapapeles
+
           </small>
 
         </div>
@@ -3654,6 +5651,43 @@ function renderAidophone() {
     </div>
 
   `;
+
+}
+
+
+function wireAidophone(
+  content
+) {
+
+  const button =
+    content.querySelector(
+      "#connectPhone"
+    );
+
+
+  if (!button)
+    return;
+
+
+  button.addEventListener(
+    "click",
+    () => {
+
+      showToast(
+        "📱 Buscando Aidophone…"
+      );
+
+
+      setTimeout(
+        () =>
+          showToast(
+            "No hay Aidophone vinculado todavía."
+          ),
+        1600
+      );
+
+    }
+  );
 
 }
 
@@ -3669,26 +5703,30 @@ function renderUpdate() {
     <div class="app-page">
 
       <div class="app-title">
-        Aido Update
+        🔄 Aido Update
       </div>
 
       <div class="app-subtitle">
-        AidoOS · Versión 1.0.0
+        AidoOS Web Edition · versión 0.1.0 Beta
       </div>
 
 
-      <div class="settings-card">
+      <div
+        class="settings-card"
+        style="margin-top:18px"
+      >
 
         <strong>
-          Estado
+          Estado del sistema
         </strong>
 
-        <p>
-          AidoOS está listo.
+        <p id="updateStatus">
+          Última comprobación: ahora.
         </p>
 
         <button
-          onclick="simulateUpdate()"
+          id="checkUpdate"
+          type="button"
         >
           Buscar actualizaciones
         </button>
@@ -3696,120 +5734,15 @@ function renderUpdate() {
       </div>
 
 
-      <div
-        id="updateProgress"
-        class="settings-card"
-      >
-        Última comprobación:
-        ahora
-      </div>
-
-    </div>
-
-  `;
-
-}
-
-
-function simulateUpdate() {
-
-  let progress = 0;
-
-  const box =
-    document.getElementById(
-      "updateProgress"
-    );
-
-  if (!box) return;
-
-
-  const interval =
-    setInterval(
-      () => {
-
-        progress += 10;
-
-        box.innerHTML =
-          `🔄 Buscando actualizaciones... ${progress}%`;
-
-
-        if (progress >= 100) {
-
-          clearInterval(
-            interval
-          );
-
-          box.innerHTML =
-            "✅ AidoOS está actualizado.";
-
-        }
-
-      },
-      180
-    );
-
-}
-
-
-/* =====================================================
-   MÚSICA
-===================================================== */
-
-function renderMusic() {
-
-  return `
-
-    <div class="app-page">
-
-      <div class="app-title">
-        AidoMusic
-      </div>
-
-      <div class="app-subtitle">
-        Tu música en AidoOS.
-      </div>
-
-
       <div class="settings-card">
 
         <strong>
-          Añadir música
+          Canal
         </strong>
 
         <p>
-          Selecciona archivos de audio de tu PC.
+          Beta · Web Edition
         </p>
-
-        <input
-          type="file"
-          accept="audio/*"
-          multiple
-          onchange="loadMusic(this)"
-        >
-
-      </div>
-
-
-      <div
-        class="music-list"
-        id="musicList"
-      >
-
-        <div class="music-item">
-
-          🎵
-
-          <div>
-            <strong>
-              Tu biblioteca
-            </strong>
-
-            <small>
-              Añade música desde tu PC.
-            </small>
-          </div>
-
-        </div>
 
       </div>
 
@@ -3820,70 +5753,81 @@ function renderMusic() {
 }
 
 
-function loadMusic(
-  input
+function wireUpdate(
+  content
 ) {
 
-  const list =
-    document.getElementById(
-      "musicList"
+  const button =
+    content.querySelector(
+      "#checkUpdate"
     );
 
-  if (!list) return;
+
+  const status =
+    content.querySelector(
+      "#updateStatus"
+    );
 
 
-  list.innerHTML = "";
+  if (
+    !button ||
+    !status
+  )
+    return;
 
 
-  [...input.files]
-    .forEach(
-      file => {
+  button.addEventListener(
+    "click",
+    () => {
 
-        const url =
-          URL.createObjectURL(
-            file
-          );
+      let progress =
+        0;
 
 
-        const item =
-          document.createElement(
-            "div"
-          );
+      const interval =
+        setInterval(
+          () => {
 
-        item.className =
-          "music-item";
-
-
-        item.innerHTML = `
-
-          🎵
-
-          <div style="flex:1">
-
-            <strong>
-              ${file.name}
-            </strong>
-
-            <audio
-              controls
-              style="width:100%;margin-top:7px"
-            >
-              <source
-                src="${url}"
-              >
-            </audio>
-
-          </div>
-
-        `;
+            progress +=
+              20;
 
 
-        list.appendChild(
-          item
+            status.textContent =
+              `Buscando actualizaciones… ${progress}%`;
+
+
+            if (
+              progress >= 100
+            ) {
+
+              clearInterval(
+                interval
+              );
+
+
+              status.textContent =
+                "✓ AidoOS está actualizado.";
+
+
+              addNotification(
+                "Aido Update",
+                "No hay actualizaciones pendientes.",
+                "🔄"
+              );
+
+
+              showToast(
+                "✅ AidoOS está actualizado"
+              );
+
+            }
+
+          },
+          180
         );
 
-      }
-    );
+    }
+  );
 
 }
 
@@ -3894,6 +5838,13 @@ function loadMusic(
 
 function renderNotes() {
 
+  const saved =
+    localStorage.getItem(
+      "aido_notes"
+    ) ||
+    "";
+
+
   return `
 
     <div class="app-page">
@@ -3902,12 +5853,13 @@ function renderNotes() {
         📝 Notas
       </div>
 
+
       <textarea
         id="notesArea"
         style="
           width:100%;
           height:300px;
-          margin-top:20px;
+          margin-top:18px;
           background:#101215;
           color:white;
           border:1px solid #333;
@@ -3915,17 +5867,12 @@ function renderNotes() {
           padding:15px;
           resize:none;
         "
-        placeholder="Escribe aquí..."
-      ></textarea>
+        placeholder="Escribe aquí…"
+      >${escapeHTML(saved)}</textarea>
+
 
       <button
-        onclick="
-          localStorage.setItem(
-            'aido_notes',
-            document.getElementById('notesArea').value
-          );
-          showToast('💾 Nota guardada');
-        "
+        id="saveNotes"
         style="
           margin-top:10px;
           padding:10px;
@@ -3934,12 +5881,55 @@ function renderNotes() {
           background:#20e59b;
         "
       >
-        Guardar
+        💾 Guardar
       </button>
 
     </div>
 
   `;
+
+}
+
+
+function wireNotes(
+  content
+) {
+
+  const area =
+    content.querySelector(
+      "#notesArea"
+    );
+
+
+  const save =
+    content.querySelector(
+      "#saveNotes"
+    );
+
+
+  if (
+    !area ||
+    !save
+  )
+    return;
+
+
+  save.addEventListener(
+    "click",
+    () => {
+
+      localStorage.setItem(
+        "aido_notes",
+        area.value
+      );
+
+
+      showToast(
+        "💾 Nota guardada"
+      );
+
+    }
+  );
 
 }
 
@@ -3955,7 +5945,7 @@ function renderCalculator() {
     <div
       class="app-page"
       style="
-        max-width:300px;
+        max-width:340px;
         margin:auto;
       "
     >
@@ -3964,26 +5954,28 @@ function renderCalculator() {
         🧮 Calculadora
       </div>
 
+
       <input
         id="calcInput"
+        placeholder="Ej. 12 * 5 + 4"
         style="
           width:100%;
-          padding:15px;
-          margin-top:20px;
-          background:#111;
+          padding:12px;
+          margin-top:15px;
+          background:#101215;
           color:white;
           border:1px solid #333;
           border-radius:10px;
         "
-        placeholder="2 + 2"
       >
 
+
       <button
-        onclick="calculate()"
+        id="calcButton"
         style="
           width:100%;
-          padding:12px;
-          margin-top:10px;
+          padding:11px;
+          margin-top:8px;
           border:0;
           border-radius:9px;
           background:#20e59b;
@@ -3991,6 +5983,7 @@ function renderCalculator() {
       >
         Calcular
       </button>
+
 
       <div
         id="calcResult"
@@ -4006,50 +5999,122 @@ function renderCalculator() {
 }
 
 
-function calculate() {
+function wireCalculator(
+  content
+) {
 
   const input =
-    document.getElementById(
-      "calcInput"
+    content.querySelector(
+      "#calcInput"
     );
+
+
+  const button =
+    content.querySelector(
+      "#calcButton"
+    );
+
 
   const result =
-    document.getElementById(
-      "calcResult"
+    content.querySelector(
+      "#calcResult"
     );
 
 
-  try {
-
-    // Solo operaciones matemáticas simples
-
-    const expression =
-      input.value
-        .replace(
-          /[^0-9+\-*/().% ]/g,
-          ""
-        );
+  if (
+    !input ||
+    !button ||
+    !result
+  )
+    return;
 
 
-    result.textContent =
-      Function(
-        `"use strict"; return (${expression})`
-      )();
+  const calculate =
+    () => {
 
-  }
+      const expression =
+        input.value
+          .replace(
+            /[^0-9+\-*/().% ]/g,
+            ""
+          )
+          .trim();
 
-  catch {
 
-    result.textContent =
-      "No pude calcularlo.";
+      if (!expression) {
 
-  }
+        result.textContent =
+          "Escribe una operación.";
+
+        return;
+
+      }
+
+
+      try {
+
+        const value =
+          Function(
+            `"use strict"; return (${expression})`
+          )();
+
+
+        if (
+          !Number.isFinite(
+            value
+          )
+        ) {
+
+          throw new Error(
+            "Resultado no válido"
+          );
+
+        }
+
+
+        result.textContent =
+          String(
+            value
+          );
+
+      }
+
+      catch {
+
+        result.textContent =
+          "No pude calcularlo.";
+
+      }
+
+    };
+
+
+  button.addEventListener(
+    "click",
+    calculate
+  );
+
+
+  input.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+      ) {
+
+        calculate();
+
+      }
+
+    }
+  );
 
 }
 
 
 /* =====================================================
-   EXPLORADOR
+   ARCHIVOS
 ===================================================== */
 
 function renderFiles() {
@@ -4062,48 +6127,56 @@ function renderFiles() {
         📁 Explorador
       </div>
 
+
       <div class="app-subtitle">
-        AidoPC
+        AidoPC · almacenamiento virtual 1 TB
       </div>
 
 
-      <div class="settings-card">
+      <div
+        class="settings-card"
+        style="
+          margin-top:18px;
+        "
+      >
 
         📁 Aplicaciones
 
         <br><br>
 
-        📁 AidoGames
+        🎮 AidoGames
 
         <br><br>
 
-        📁 AidoStore
+        🛍️ AidoStore
 
         <br><br>
 
-        📁 Documentos
+        📄 Documentos
 
         <br><br>
 
-        📁 Música
+        🎵 Música
 
         <br><br>
 
-        📁 Imágenes
+        🖼️ Imágenes
+
+        <br><br>
+
+        ⬇️ Descargas
 
       </div>
 
 
       <div class="settings-card">
 
-        💾
-
         <strong>
-          AidoPC · 1 TB
+          💾 SSD AidoPC
         </strong>
 
         <p>
-          Unidad principal
+          1 TB · 258 GB usados · 742 GB libres
         </p>
 
       </div>
@@ -4125,25 +6198,42 @@ function renderPaint() {
 
     <div
       class="app-page"
-      style="height:100%"
+      style="
+        height:100%;
+        display:flex;
+        flex-direction:column;
+      "
     >
 
       <div class="app-title">
         🎨 Aido Paint
       </div>
 
+
       <canvas
         id="paintCanvas"
-        width="500"
-        height="280"
+        width="700"
+        height="400"
         style="
           background:white;
           width:100%;
+          flex:1;
           margin-top:15px;
           border-radius:10px;
           cursor:crosshair;
         "
       ></canvas>
+
+
+      <div
+        style="
+          margin-top:8px;
+          color:#999;
+          font-size:10px;
+        "
+      >
+        Haz clic y arrastra para dibujar.
+      </div>
 
     </div>
 
@@ -4152,15 +6242,611 @@ function renderPaint() {
 }
 
 
+function wirePaint(
+  content
+) {
+
+  const canvas =
+    content.querySelector(
+      "#paintCanvas"
+    );
+
+
+  if (!canvas) return;
+
+
+  const ctx =
+    canvas.getContext(
+      "2d"
+    );
+
+
+  let drawing =
+    false;
+
+
+  const point =
+    event => {
+
+      const rect =
+        canvas.getBoundingClientRect();
+
+
+      return {
+
+        x:
+          (
+            event.clientX -
+            rect.left
+          ) *
+          (
+            canvas.width /
+            rect.width
+          ),
+
+        y:
+          (
+            event.clientY -
+            rect.top
+          ) *
+          (
+            canvas.height /
+            rect.height
+          )
+
+      };
+
+    };
+
+
+  canvas.addEventListener(
+    "pointerdown",
+    event => {
+
+      drawing =
+        true;
+
+
+      canvas.setPointerCapture(
+        event.pointerId
+      );
+
+    }
+  );
+
+
+  canvas.addEventListener(
+    "pointerup",
+    event => {
+
+      drawing =
+        false;
+
+
+      try {
+
+        canvas.releasePointerCapture(
+          event.pointerId
+        );
+
+      }
+
+      catch {}
+
+    }
+  );
+
+
+  canvas.addEventListener(
+    "pointermove",
+    event => {
+
+      if (!drawing)
+        return;
+
+
+      const p =
+        point(
+          event
+        );
+
+
+      ctx.fillStyle =
+        "#111";
+
+
+      ctx.beginPath();
+
+
+      ctx.arc(
+        p.x,
+        p.y,
+        4,
+        0,
+        Math.PI * 2
+      );
+
+
+      ctx.fill();
+
+    }
+  );
+
+}
+
+
 /* =====================================================
-   TOAST
+   BROWSER
 ===================================================== */
 
-let toastTimer;
+function renderBrowser() {
+
+  return `
+
+    <div class="browser">
+
+      <div class="browser-toolbar">
+
+        <button
+          type="button"
+          data-browser="back"
+        >
+          ←
+        </button>
+
+
+        <button
+          type="button"
+          data-browser="reload"
+        >
+          ↻
+        </button>
+
+
+        <input
+          id="browserUrl"
+          class="browser-url"
+          value="https://example.com"
+          placeholder="Buscar o escribir una dirección"
+        >
+
+
+        <button
+          type="button"
+          data-browser="go"
+        >
+          →
+        </button>
+
+
+        <button
+          type="button"
+          data-browser="external"
+        >
+          ↗
+        </button>
+
+      </div>
+
+
+      <div class="browser-info">
+
+        Aido NavegerPRO · Algunas páginas no permiten mostrarse dentro de otra web.
+
+      </div>
+
+
+      <iframe
+        id="browserFrame"
+        class="browser-frame"
+        src="https://example.com"
+        title="Aido NavegerPRO"
+      ></iframe>
+
+    </div>
+
+  `;
+
+}
+
+
+function wireBrowser(
+  content
+) {
+
+  const input =
+    content.querySelector(
+      "#browserUrl"
+    );
+
+
+  const frame =
+    content.querySelector(
+      "#browserFrame"
+    );
+
+
+  if (
+    !input ||
+    !frame
+  )
+    return;
+
+
+  const navigate =
+    () => {
+
+      let value =
+        input.value
+          .trim();
+
+
+      if (!value)
+        return;
+
+
+      if (
+        !/^https?:\/\//i.test(
+          value
+        )
+      ) {
+
+        if (
+          value.includes(".") &&
+          !value.includes(" ")
+        ) {
+
+          value =
+            "https://" +
+            value;
+
+        }
+
+        else {
+
+          value =
+            "https://www.google.com/search?q=" +
+            encodeURIComponent(
+              value
+            );
+
+        }
+
+      }
+
+
+      input.value =
+        value;
+
+
+      frame.src =
+        value;
+
+    };
+
+
+  const go =
+    content.querySelector(
+      '[data-browser="go"]'
+    );
+
+
+  if (go) {
+
+    go.addEventListener(
+      "click",
+      navigate
+    );
+
+  }
+
+
+  input.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+      ) {
+
+        navigate();
+
+      }
+
+    }
+  );
+
+
+  const reload =
+    content.querySelector(
+      '[data-browser="reload"]'
+    );
+
+
+  if (reload) {
+
+    reload.addEventListener(
+      "click",
+      () => {
+
+        frame.src =
+          frame.src;
+
+      }
+    );
+
+  }
+
+
+  const back =
+    content.querySelector(
+      '[data-browser="back"]'
+    );
+
+
+  if (back) {
+
+    back.addEventListener(
+      "click",
+      () => {
+
+        try {
+
+          frame.contentWindow
+            .history
+            .back();
+
+        }
+
+        catch {}
+
+      }
+    );
+
+  }
+
+
+  const external =
+    content.querySelector(
+      '[data-browser="external"]'
+    );
+
+
+  if (external) {
+
+    external.addEventListener(
+      "click",
+      () => {
+
+        let url =
+          input.value
+            .trim();
+
+
+        if (
+          !/^https?:\/\//i.test(
+            url
+          )
+        ) {
+
+          url =
+            "https://" +
+            url;
+
+        }
+
+
+        window.open(
+          url,
+          "_blank",
+          "noopener,noreferrer"
+        );
+
+      }
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   WIRING DE APPS
+===================================================== */
+
+function wireApp(
+  appId,
+  content
+) {
+
+  const map = {
+
+    store:
+      wireStore,
+
+    aidoia:
+      wireAidoIA,
+
+    settings:
+      wireSettings,
+
+    office:
+      wireOffice,
+
+    games:
+      wireGames,
+
+    music:
+      wireMusic,
+
+    aidophone:
+      wireAidophone,
+
+    update:
+      wireUpdate,
+
+    notes:
+      wireNotes,
+
+    calculator:
+      wireCalculator,
+
+    paint:
+      wirePaint,
+
+    browser:
+      wireBrowser
+
+  };
+
+
+  if (
+    map[appId]
+  ) {
+
+    map[appId](
+      content
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   UTILIDADES
+===================================================== */
+
+function loadJSON(
+  key,
+  fallback
+) {
+
+  try {
+
+    const raw =
+      localStorage.getItem(
+        key
+      );
+
+
+    return raw
+      ? JSON.parse(raw)
+      : fallback;
+
+  }
+
+  catch {
+
+    return fallback;
+
+  }
+
+}
+
+
+function saveJSON(
+  key,
+  value
+) {
+
+  localStorage.setItem(
+    key,
+    JSON.stringify(value)
+  );
+
+}
+
+
+function setText(
+  id,
+  value
+) {
+
+  const element =
+    document.getElementById(
+      id
+    );
+
+
+  if (element) {
+
+    element.textContent =
+      value;
+
+  }
+
+}
+
+
+function random(
+  array
+) {
+
+  return array[
+    Math.floor(
+      Math.random() *
+      array.length
+    )
+  ];
+
+}
+
+
+function randomInt(
+  min,
+  max
+) {
+
+  return Math.floor(
+    Math.random() *
+      (
+        max -
+        min +
+        1
+      )
+  ) + min;
+
+}
+
+
+function escapeHTML(
+  value
+) {
+
+  return String(
+    value
+  )
+  .replaceAll(
+    "&",
+    "&amp;"
+  )
+  .replaceAll(
+    "<",
+    "&lt;"
+  )
+  .replaceAll(
+    ">",
+    "&gt;"
+  )
+  .replaceAll(
+    '"',
+    "&quot;"
+  )
+  .replaceAll(
+    "'",
+    "&#039;"
+  );
+
+}
+
+
+let toastTimer =
+  null;
 
 
 function showToast(
-  text
+  message
 ) {
 
   const toast =
@@ -4168,8 +6854,14 @@ function showToast(
       "toast"
     );
 
+
+  if (!toast)
+    return;
+
+
   toast.textContent =
-    text;
+    message;
+
 
   toast.classList.add(
     "show"
@@ -4187,263 +6879,12 @@ function showToast(
         toast.classList.remove(
           "show"
         ),
-      2500
+      2400
     );
-
-}
-
-
-/* =====================================================
-   NOTIFICACIONES
-===================================================== */
-
-function addNotification(
-  title,
-  message
-) {
-
-  const list =
-    document.getElementById(
-      "notifications"
-    );
-
-  const item =
-    document.createElement(
-      "div"
-    );
-
-  item.className =
-    "notification";
-
-  item.innerHTML = `
-
-    <span class="notification-icon">
-      🔔
-    </span>
-
-    <div>
-
-      <strong>
-        ${title}
-      </strong>
-
-      <p>
-        ${message}
-      </p>
-
-    </div>
-
-  `;
-
-  list.prepend(
-    item
-  );
-
-}
-
-
-/* =====================================================
-   ESCRITORIOS VIRTUALES
-===================================================== */
-
-function switchDesktop(
-  desktop
-) {
-
-  state.currentDesktop =
-    desktop;
-
-
-  state.windows.forEach(
-    data => {
-
-      const same =
-        data.desktop ===
-        desktop;
-
-
-      if (same) {
-
-        data.element.style.display =
-          data.minimized
-            ? "none"
-            : "flex";
-
-      } else {
-
-        data.element.style.display =
-          "none";
-
-      }
-
-    }
-  );
-
-
-  showToast(
-    `🖥️ Escritorio ${desktop}`
-  );
-
-
-  closeAllPanels();
-
-}
-
-
-/* =====================================================
-   PINTAR
-===================================================== */
-
-document.addEventListener(
-  "mousedown",
-  event => {
-
-    const canvas =
-      event.target;
-
-    if (
-      canvas.tagName !==
-      "CANVAS" ||
-      canvas.id !==
-      "paintCanvas"
-    )
-      return;
-
-
-    const ctx =
-      canvas.getContext(
-        "2d"
-      );
-
-    let drawing = true;
-
-
-    function draw(e) {
-
-      if (!drawing)
-        return;
-
-
-      const rect =
-        canvas.getBoundingClientRect();
-
-
-      const x =
-        (e.clientX -
-          rect.left) *
-        canvas.width /
-        rect.width;
-
-
-      const y =
-        (e.clientY -
-          rect.top) *
-        canvas.height /
-        rect.height;
-
-
-      ctx.fillStyle =
-        "#111";
-
-      ctx.beginPath();
-
-      ctx.arc(
-        x,
-        y,
-        4,
-        0,
-        Math.PI * 2
-      );
-
-      ctx.fill();
-
-    }
-
-
-    canvas.addEventListener(
-      "mousemove",
-      draw
-    );
-
-
-    canvas.addEventListener(
-      "mouseup",
-      () => {
-
-        drawing = false;
-
-        canvas.removeEventListener(
-          "mousemove",
-          draw
-        );
-
-      },
-      {
-        once: true
-      }
-    );
-
-  }
-);
-
-
-/* =====================================================
-   CARGAR NOTAS
-===================================================== */
-
-setTimeout(
-  () => {
-
-    const notes =
-      localStorage.getItem(
-        "aido_notes"
-      );
-
-    const area =
-      document.getElementById(
-        "notesArea"
-      );
-
-    if (area && notes)
-      area.value =
-        notes;
-
-  },
-  100
-);
-
-
-/* =====================================================
-   BRILLO
-===================================================== */
-
-const brightness =
-  document.getElementById(
-    "brightnessSlider"
-  );
-
-if (brightness) {
-
-  brightness.addEventListener(
-    "input",
-    event => {
-
-      const value =
-        event.target.value;
-
-      document
-        .querySelector(
-          ".wallpaper"
-        )
-        .style.filter =
-        `brightness(${value}%)`;
-
-    }
-  );
 
 }
 
 
 /* =====================================================
    FIN
-=========
+===================================================== */
