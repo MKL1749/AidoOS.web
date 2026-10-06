@@ -1,0 +1,1962 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --green: #20e59b;
+  --green-dark: #0d9b68;
+  --glass: rgba(25, 27, 31, .90);
+  --glass2: rgba(35, 37, 42, .94);
+  --border: rgba(255,255,255,.10);
+  --text: #f5f7fa;
+  --muted: #aeb4bd;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Inter, Arial, sans-serif;
+  background: #08090b;
+  color: var(--text);
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+
+/* =========================
+   AIDOS
+========================= */
+
+#aidoOS {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+
+/* =========================
+   FONDO
+========================= */
+
+.wallpaper {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(20,180,130,.25),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #071012,
+      #10161b 45%,
+      #060708
+    );
+
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+
+/*
+  SI QUIERES PONER TU IMAGEN DE IRON MAN:
+
+  1. Guarda la imagen como:
+     fondo.jpg
+
+  2. Súbela junto a tu proyecto.
+
+  3. Cambia el background de .wallpaper por:
+
+  background:
+      linear-gradient(
+        rgba(0,0,0,.25),
+        rgba(0,0,0,.45)
+      ),
+      url("fondo.jpg") center/cover;
+*/
+
+.wallpaper-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      rgba(0,0,0,.12),
+      rgba(0,0,0,.35)
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+
+/* =========================
+   ESCRITORIO
+========================= */
+
+#desktop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.desktop-widgets {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.desktop-widget {
+  width: 190px;
+
+  padding: 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 18px;
+
+  background: rgba(15,18,21,.55);
+  backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 15px 40px rgba(0,0,0,.2);
+}
+
+.clock-widget {
+  display: flex;
+  flex-direction: column;
+}
+
+.clock-widget span {
+  font-family: Silkscreen, monospace;
+  font-size: 23px;
+}
+
+.desktop-widget small {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.pc-widget {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.widget-icon {
+  font-size: 25px;
+}
+
+
+/* =========================
+   VENTANAS
+========================= */
+
+#windowLayer {
+  position: absolute;
+  inset: 0;
+
+  z-index: 20;
+
+  pointer-events: none;
+}
+
+.aido-window {
+  position: absolute;
+
+  width: 620px;
+  height: 430px;
+
+  min-width: 390px;
+  min-height: 250px;
+
+  border: 1px solid rgba(255,255,255,.14);
+
+  border-radius: 17px;
+
+  background: rgba(20,22,26,.96);
+
+  box-shadow:
+    0 30px 80px rgba(0,0,0,.55);
+
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+
+  pointer-events: auto;
+
+  animation: windowOpen .18s ease-out;
+}
+
+@keyframes windowOpen {
+
+  from {
+    opacity: 0;
+    transform: scale(.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.window-header {
+  height: 45px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 10px 0 15px;
+
+  background: rgba(255,255,255,.045);
+
+  border-bottom: 1px solid var(--border);
+
+  cursor: grab;
+
+  user-select: none;
+}
+
+.window-header:active {
+  cursor: grabbing;
+}
+
+.window-title {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.window-title-icon {
+  font-size: 18px;
+}
+
+.window-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.window-control {
+  width: 32px;
+  height: 28px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  font-size: 14px;
+}
+
+.window-control:hover {
+  background: rgba(255,255,255,.09);
+}
+
+.window-control.close:hover {
+  background: #c92b3a;
+}
+
+.window-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.aido-window.suspended .window-content {
+  display: none;
+}
+
+.suspended-screen {
+  display: none;
+
+  flex: 1;
+
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  gap: 10px;
+
+  color: var(--muted);
+}
+
+.aido-window.suspended .suspended-screen {
+  display: flex;
+}
+
+
+/* =========================
+   BARRA
+========================= */
+
+#taskbar {
+
+  position: absolute;
+
+  left: 50%;
+  bottom: 9px;
+
+  transform: translateX(-50%);
+
+  width: min(1100px, calc(100vw - 25px));
+
+  height: 64px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 8px 10px;
+
+  background: rgba(20,22,26,.88);
+
+  border:
+    1px solid rgba(255,255,255,.12);
+
+  backdrop-filter: blur(22px);
+
+  border-radius: 19px;
+
+  box-shadow:
+    0 15px 50px rgba(0,0,0,.45);
+
+  z-index: 100;
+}
+
+.taskbar-left,
+.taskbar-center,
+.taskbar-right {
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.taskbar-left {
+  flex: 1;
+}
+
+.taskbar-center {
+  justify-content: center;
+}
+
+.taskbar-right {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.taskbar-button,
+.tray-button {
+
+  border: 0;
+
+  background: transparent;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  transition:
+    transform .15s,
+    background .15s;
+}
+
+.taskbar-button:hover,
+.tray-button:hover {
+  background: rgba(255,255,255,.10);
+  transform: translateY(-2px);
+}
+
+.search-button {
+
+  width: 120px;
+
+  background:
+    rgba(255,255,255,.06);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  color: #c8cdd4;
+}
+
+.task-tabs {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  max-width: 300px;
+
+  overflow-x: auto;
+}
+
+.task-tab {
+
+  height: 40px;
+
+  max-width: 160px;
+
+  padding: 0 8px 0 12px;
+
+  border: 1px solid transparent;
+
+  border-radius: 11px;
+
+  background: rgba(255,255,255,.055);
+
+  color: white;
+
+  cursor: pointer;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  white-space: nowrap;
+}
+
+.task-tab:hover {
+  background: rgba(255,255,255,.10);
+}
+
+.task-tab.active {
+  background: rgba(32,229,155,.14);
+  border-color: rgba(32,229,155,.28);
+}
+
+.task-tab-close {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #aaa;
+  padding: 2px 5px;
+  border-radius: 5px;
+}
+
+.task-tab-close:hover {
+  background: rgba(255,255,255,.1);
+  color: white;
+}
+
+.clock-area {
+
+  border: 0;
+
+  background: transparent;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  cursor: pointer;
+
+  color: white;
+
+  padding: 5px 8px;
+
+  border-radius: 9px;
+}
+
+.clock-area:hover {
+  background: rgba(255,255,255,.08);
+}
+
+#taskClock {
+  font-size: 12px;
+}
+
+#taskDate {
+  font-size: 10px;
+  color: #aeb4bd;
+}
+
+
+/* =========================
+   INICIO
+========================= */
+
+.panel,
+.floating-panel {
+
+  position: absolute;
+
+  background:
+    rgba(25,27,31,.95);
+
+  backdrop-filter: blur(28px);
+
+  border:
+    1px solid rgba(255,255,255,.12);
+
+  box-shadow:
+    0 25px 80px rgba(0,0,0,.55);
+
+  z-index: 80;
+}
+
+#startMenu {
+
+  left: 50%;
+
+  bottom: 82px;
+
+  transform: translateX(-50%);
+
+  width: min(850px, calc(100vw - 25px));
+
+  height: 700px;
+
+  max-height: calc(100vh - 100px);
+
+  border-radius: 20px;
+
+  overflow: hidden;
+
+  padding: 28px;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+.start-search {
+
+  height: 45px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 0 15px;
+
+  border-radius: 25px;
+
+  background: rgba(255,255,255,.06);
+
+  border: 1px solid rgba(255,255,255,.09);
+}
+
+.start-search input {
+
+  flex: 1;
+
+  border: 0;
+
+  outline: 0;
+
+  background: transparent;
+
+  color: white;
+
+  font-size: 14px;
+}
+
+.start-top {
+
+  margin-top: 28px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+}
+
+.start-top h3 {
+  margin: 0;
+}
+
+.start-top button {
+
+  border: 0;
+  background: transparent;
+
+  color: #bbb;
+
+  cursor: pointer;
+}
+
+.start-app-grid {
+
+  margin-top: 20px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(8, 1fr);
+
+  gap: 8px;
+
+  max-height: 250px;
+
+  overflow-y: auto;
+}
+
+.app-start-button {
+
+  border: 0;
+
+  background: transparent;
+
+  color: white;
+
+  padding: 10px 5px;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 7px;
+
+  min-height: 75px;
+}
+
+.app-start-button:hover {
+  background: rgba(255,255,255,.08);
+}
+
+.app-start-icon {
+  font-size: 28px;
+}
+
+.app-start-name {
+  font-size: 10px;
+  text-align: center;
+}
+
+.start-section-title {
+
+  margin-top: 25px;
+
+  margin-bottom: 12px;
+
+  font-weight: 700;
+}
+
+.recent-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 10px;
+}
+
+.recent-item {
+
+  display: flex;
+
+  gap: 10px;
+
+  align-items: center;
+
+  padding: 12px;
+
+  background: rgba(255,255,255,.045);
+
+  border-radius: 12px;
+
+  cursor: pointer;
+}
+
+.recent-item:hover {
+  background: rgba(255,255,255,.08);
+}
+
+.recent-item small {
+  color: #aaa;
+}
+
+.start-bottom {
+
+  margin-top: auto;
+
+  padding-top: 18px;
+
+  border-top: 1px solid var(--border);
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+}
+
+.user-profile {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.user-profile small {
+
+  display: block;
+
+  color: #999;
+
+  font-size: 11px;
+}
+
+.avatar {
+
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: linear-gradient(
+    135deg,
+    #3d754f,
+    #16281d
+  );
+}
+
+.power-button {
+
+  border: 0;
+
+  background: transparent;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+}
+
+.power-button:hover {
+  background: rgba(255,255,255,.08);
+}
+
+
+/* =========================
+   FLOATING PANELS
+========================= */
+
+.floating-panel {
+
+  width: 380px;
+
+  border-radius: 18px;
+
+  padding: 18px;
+
+  bottom: 83px;
+
+  right: 18px;
+}
+
+.panel-title,
+.quick-header {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 15px;
+}
+
+.panel-title button,
+.quick-header button,
+.search-panel-header button {
+
+  border: 0;
+
+  background: transparent;
+
+  color: #aaa;
+
+  cursor: pointer;
+
+  font-size: 20px;
+}
+
+.quick-header small {
+
+  display: block;
+
+  color: #888;
+
+  margin-top: 3px;
+}
+
+
+/* =========================
+   BUSCADOR
+========================= */
+
+.search-button-panel {
+
+  right: auto;
+  left: 20px;
+}
+
+.big-search {
+
+  width: 100%;
+
+  height: 45px;
+
+  padding: 0 14px;
+
+  border-radius: 12px;
+
+  border: 1px solid var(--border);
+
+  background: rgba(255,255,255,.06);
+
+  color: white;
+
+  outline: none;
+}
+
+.search-result {
+
+  margin-top: 15px;
+
+  min-height: 100px;
+
+  padding: 14px;
+
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.045);
+}
+
+.search-hint {
+  color: #aaa;
+}
+
+
+/* =========================
+   QUICK
+========================= */
+
+.quick-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 8px;
+}
+
+.quick-toggle {
+
+  border: 1px solid var(--border);
+
+  background: rgba(255,255,255,.045);
+
+  border-radius: 13px;
+
+  padding: 12px;
+
+  cursor: pointer;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+
+  text-align: left;
+}
+
+.quick-toggle:hover,
+.quick-toggle.active {
+
+  border-color:
+    rgba(32,229,155,.4);
+
+  background:
+    rgba(32,229,155,.12);
+}
+
+.quick-toggle span {
+  font-size: 21px;
+}
+
+.quick-toggle small {
+  color: #888;
+  font-size: 10px;
+}
+
+.slider-row {
+
+  display: flex;
+
+  gap: 12px;
+
+  align-items: center;
+
+  margin-top: 18px;
+}
+
+.slider-row input {
+  flex: 1;
+}
+
+.quick-footer {
+
+  margin-top: 18px;
+
+  padding-top: 15px;
+
+  border-top: 1px solid var(--border);
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+}
+
+.quick-footer button {
+
+  border: 0;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  font-size: 18px;
+}
+
+
+/* =========================
+   WIDGETS
+========================= */
+
+.widget-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2,1fr);
+
+  gap: 10px;
+}
+
+.big-widget {
+
+  padding: 18px;
+
+  background: rgba(255,255,255,.045);
+
+  border-radius: 15px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.big-widget span {
+  font-size: 25px;
+}
+
+.big-widget strong {
+  font-family: Silkscreen, monospace;
+  font-size: 13px;
+}
+
+.big-widget small {
+  color: #999;
+}
+
+
+/* =========================
+   NOTIFICACIONES
+========================= */
+
+.notification {
+
+  display: flex;
+
+  gap: 12px;
+
+  padding: 13px;
+
+  margin-bottom: 8px;
+
+  background: rgba(255,255,255,.045);
+
+  border-radius: 13px;
+}
+
+.notification-icon {
+  font-size: 22px;
+}
+
+.notification p {
+
+  margin: 4px 0 0;
+
+  color: #aaa;
+
+  font-size: 12px;
+}
+
+
+/* =========================
+   DESKTOP SWITCHER
+========================= */
+
+.desktop-list {
+
+  display: grid;
+
+  gap: 9px;
+}
+
+.desktop-list button {
+
+  border: 1px solid var(--border);
+
+  background: rgba(255,255,255,.05);
+
+  padding: 15px;
+
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  color: white;
+}
+
+.desktop-list button:hover {
+  background: rgba(32,229,155,.1);
+}
+
+
+/* =========================
+   APP GENERAL
+========================= */
+
+.app-page {
+
+  padding: 20px;
+
+  min-height: 100%;
+
+  background:
+    linear-gradient(
+      rgba(15,17,20,.8),
+      rgba(15,17,20,.95)
+    );
+}
+
+.app-title {
+
+  font-family: Silkscreen, monospace;
+
+  font-size: 20px;
+
+  margin-bottom: 5px;
+}
+
+.app-subtitle {
+  color: #90969e;
+  font-size: 12px;
+}
+
+
+/* =========================
+   STORE
+========================= */
+
+.store-search {
+
+  margin: 18px 0;
+
+  width: 100%;
+
+  height: 42px;
+
+  padding: 0 14px;
+
+  border-radius: 11px;
+
+  background: rgba(255,255,255,.06);
+
+  border: 1px solid var(--border);
+
+  color: white;
+
+  outline: none;
+}
+
+.store-categories {
+
+  display: flex;
+
+  gap: 7px;
+
+  margin-bottom: 15px;
+
+  overflow-x: auto;
+}
+
+.store-category {
+
+  border: 1px solid var(--border);
+
+  background: rgba(255,255,255,.05);
+
+  color: white;
+
+  padding: 8px 12px;
+
+  border-radius: 20px;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+}
+
+.store-category.active {
+
+  background:
+    rgba(32,229,155,.15);
+
+  border-color:
+    rgba(32,229,155,.4);
+}
+
+.store-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3,1fr);
+
+  gap: 12px;
+}
+
+.store-card {
+
+  border: 1px solid var(--border);
+
+  background: rgba(255,255,255,.045);
+
+  border-radius: 15px;
+
+  padding: 14px;
+
+  transition: transform .15s;
+}
+
+.store-card:hover {
+  transform: translateY(-2px);
+}
+
+.store-card-icon {
+
+  width: 50px;
+  height: 50px;
+
+  display: grid;
+
+  place-items: center;
+
+  font-size: 27px;
+
+  border-radius: 13px;
+
+  background: rgba(255,255,255,.08);
+
+  margin-bottom: 10px;
+}
+
+.store-card h4 {
+  margin: 0;
+}
+
+.store-card p {
+
+  color: #888;
+
+  font-size: 11px;
+
+  min-height: 30px;
+}
+
+.store-card button {
+
+  width: 100%;
+
+  padding: 9px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background: var(--green);
+
+  color: #07130e;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.store-card button.installed {
+
+  background:
+    rgba(255,255,255,.09);
+
+  color: white;
+}
+
+
+/* =========================
+   BROWSER
+========================= */
+
+.browser {
+
+  display: flex;
+
+  flex-direction: column;
+
+  height: 100%;
+}
+
+.browser-toolbar {
+
+  display: flex;
+
+  gap: 6px;
+
+  padding: 9px;
+
+  background: rgba(255,255,255,.04);
+
+  border-bottom: 1px solid var(--border);
+}
+
+.browser-toolbar button {
+
+  border: 0;
+
+  width: 35px;
+
+  border-radius: 8px;
+
+  background: rgba(255,255,255,.07);
+
+  cursor: pointer;
+}
+
+.browser-url {
+
+  flex: 1;
+
+  border: 1px solid var(--border);
+
+  border-radius: 9px;
+
+  background: rgba(0,0,0,.25);
+
+  color: white;
+
+  padding: 0 12px;
+
+  outline: none;
+}
+
+.browser-frame {
+
+  flex: 1;
+
+  width: 100%;
+
+  border: 0;
+
+  background: white;
+}
+
+.browser-info {
+
+  padding: 7px 12px;
+
+  background: #15171a;
+
+  font-size: 10px;
+
+  color: #888;
+}
+
+
+/* =========================
+   AIDOIA
+========================= */
+
+.aidoia {
+
+  display: flex;
+
+  flex-direction: column;
+
+  height: 100%;
+}
+
+.aidoia-header {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 15px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.aidoia-logo {
+
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 14px;
+
+  font-size: 23px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #1d2928,
+      #101817
+    );
+
+  box-shadow:
+    0 0 30px rgba(32,229,155,.15);
+}
+
+.aidoia-status {
+
+  color: #777;
+
+  font-size: 10px;
+
+  margin-top: 3px;
+}
+
+.aidoia-messages {
+
+  flex: 1;
+
+  overflow-y: auto;
+
+  padding: 18px;
+}
+
+.ai-message,
+.user-message {
+
+  max-width: 78%;
+
+  padding: 11px 14px;
+
+  border-radius: 15px;
+
+  margin-bottom: 10px;
+
+  line-height: 1.45;
+
+  font-size: 13px;
+}
+
+.ai-message {
+
+  background:
+    rgba(255,255,255,.07);
+
+  margin-right: auto;
+}
+
+.user-message {
+
+  background:
+    #087f5b;
+
+  margin-left: auto;
+}
+
+.aidoia-input {
+
+  display: flex;
+
+  gap: 8px;
+
+  padding: 12px;
+
+  border-top: 1px solid var(--border);
+}
+
+.aidoia-input input {
+
+  flex: 1;
+
+  border: 0;
+
+  outline: none;
+
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.07);
+
+  color: white;
+
+  padding: 11px;
+}
+
+.aidoia-input button {
+
+  border: 0;
+
+  border-radius: 12px;
+
+  padding: 0 16px;
+
+  background: var(--green);
+
+  cursor: pointer;
+
+  font-weight: 700;
+}
+
+
+/* =========================
+   SETTINGS
+========================= */
+
+.settings-layout {
+
+  display: flex;
+
+  height: 100%;
+}
+
+.settings-sidebar {
+
+  width: 190px;
+
+  border-right: 1px solid var(--border);
+
+  padding: 10px;
+
+  overflow-y: auto;
+}
+
+.settings-nav {
+
+  width: 100%;
+
+  padding: 11px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: #ccc;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  font-size: 11px;
+
+  margin-bottom: 3px;
+}
+
+.settings-nav:hover,
+.settings-nav.active {
+
+  background:
+    rgba(32,229,155,.12);
+
+  color: white;
+}
+
+.settings-content {
+
+  flex: 1;
+
+  padding: 25px;
+
+  overflow-y: auto;
+}
+
+.settings-content h2 {
+
+  font-family: Silkscreen, monospace;
+
+  font-size: 19px;
+}
+
+.settings-card {
+
+  background: rgba(255,255,255,.045);
+
+  border: 1px solid var(--border);
+
+  padding: 15px;
+
+  border-radius: 14px;
+
+  margin-top: 10px;
+}
+
+.settings-card button {
+
+  border: 0;
+
+  background: var(--green);
+
+  color: #07130e;
+
+  padding: 8px 12px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  margin-top: 8px;
+}
+
+
+/* =========================
+   OFFICE
+========================= */
+
+.office-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2,1fr);
+
+  gap: 12px;
+
+  margin-top: 20px;
+}
+
+.office-card {
+
+  padding: 20px;
+
+  background: rgba(255,255,255,.045);
+
+  border: 1px solid var(--border);
+
+  border-radius: 15px;
+
+  cursor: pointer;
+}
+
+.office-card:hover {
+
+  background:
+    rgba(255,255,255,.08);
+}
+
+.office-icon {
+  font-size: 35px;
+}
+
+.editor {
+
+  display: flex;
+
+  flex-direction: column;
+
+  height: 100%;
+}
+
+.editor-toolbar {
+
+  padding: 9px;
+
+  border-bottom: 1px solid var(--border);
+
+  display: flex;
+
+  gap: 5px;
+}
+
+.editor-toolbar button {
+
+  border: 0;
+
+  background: rgba(255,255,255,.07);
+
+  padding: 7px 10px;
+
+  border-radius: 7px;
+
+  cursor: pointer;
+}
+
+.editor-area {
+
+  flex: 1;
+
+  padding: 20px;
+
+  outline: none;
+
+  overflow: auto;
+
+  background: white;
+
+  color: #111;
+}
+
+
+/* =========================
+   GAMES
+========================= */
+
+.games-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2,1fr);
+
+  gap: 12px;
+
+  margin-top: 20px;
+}
+
+.game-card {
+
+  border: 1px solid var(--border);
+
+  background: rgba(255,255,255,.045);
+
+  border-radius: 16px;
+
+  padding: 16px;
+}
+
+.game-image {
+
+  height: 105px;
+
+  border-radius: 12px;
+
+  display: grid;
+
+  place-items: center;
+
+  font-size: 45px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #182b2b,
+      #101319
+    );
+
+  margin-bottom: 12px;
+}
+
+.game-card button {
+
+  width: 100%;
+
+  padding: 9px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background: var(--green);
+
+  cursor: pointer;
+
+  font-weight: 700;
+}
+
+.game-canvas {
+
+  width: 100%;
+
+  height: 100%;
+
+  background:
+    #101418;
+
+  display: block;
+}
+
+.game-screen {
+
+  height: 100%;
+
+  position: relative;
+}
+
+.game-hud {
+
+  position: absolute;
+
+  top: 10px;
+
+  left: 10px;
+
+  z-index: 2;
+
+  background: rgba(0,0,0,.55);
+
+  padding: 8px 12px;
+
+  border-radius: 9px;
+
+  font-family: Silkscreen, monospace;
+
+  font-size: 11px;
+}
+
+
+/* =========================
+   AIDOPHONE
+========================= */
+
+.phone-page {
+
+  display: grid;
+
+  place-items: center;
+
+  height: 100%;
+
+  padding: 20px;
+}
+
+.phone {
+
+  width: 210px;
+
+  height: 370px;
+
+  border-radius: 30px;
+
+  padding: 12px;
+
+  background: #08090b;
+
+  border: 3px solid #333;
+
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+}
+
+.phone-screen {
+
+  height: 100%;
+
+  border-radius: 21px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #18282d,
+      #071012
+    );
+
+  padding: 20px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+
+/* =========================
+   MÚSICA
+========================= */
+
+.music-list {
+
+  display: grid;
+
+  gap: 8px;
+
+  margin-top: 15px;
+}
+
+.music-item {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 12px;
+
+  background: rgba(255,255,255,.05);
+
+  border-radius: 11px;
+}
+
+
+/* =========================
+   HIDDEN
+========================= */
+
+.hidden {
+  display: none !important;
+}
+
+
+/* =========================
+   TOAST
+========================= */
+
+#toast {
+
+  position: fixed;
+
+  left: 50%;
+
+  bottom: 90px;
+
+  transform:
+    translate(-50%, 20px);
+
+  background:
+    rgba(20,22,26,.96);
+
+  border: 1px solid var(--border);
+
+  padding: 12px 18px;
+
+  border-radius: 13px;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transition: .2s;
+
+  z-index: 9999;
+
+  box-shadow:
+    0 15px 50px rgba(0,0,0,.5);
+
+  font-size: 12px;
+}
+
+#toast.show {
+
+  opacity: 1;
+
+  transform:
+    translate(-50%, 0);
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width: 800px) {
+
+  .start-app-grid {
+    grid-template-columns: repeat(4,1fr);
+  }
+
+  .store-grid {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .aido-window {
+    width: calc(100vw - 30px);
+    height: calc(100vh - 120px);
+  }
+
+  .desktop-widgets {
+    display: none;
+  }
+
+  .taskbar {
+    width: calc(100vw - 10px);
+  }
+
+  .search-button span {
+    display: none;
+  }
+
+  .taskbar-right .tray-button:nth-child(-n+2) {
+    display: none;
+  }
+}
