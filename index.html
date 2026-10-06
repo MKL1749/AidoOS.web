@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>AidoOS</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div id="aidoOS">
+
+  <!-- FONDO -->
+  <div class="wallpaper"></div>
+  <div class="wallpaper-overlay"></div>
+
+  <!-- ESCRITORIO -->
+  <main id="desktop">
+
+    <div class="desktop-widgets">
+
+      <div class="desktop-widget clock-widget">
+        <span id="desktopClock">00:00</span>
+        <small id="desktopDate">AidoPC</small>
+      </div>
+
+      <div class="desktop-widget pc-widget">
+        <div class="widget-icon">💾</div>
+        <div>
+          <strong>1 TB</strong>
+          <small>AidoPC</small>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- VENTANAS -->
+  <section id="windowLayer"></section>
+
+
+  <!-- INICIO -->
+  <section id="startMenu" class="panel hidden">
+
+    <div class="start-search">
+      <span>🔎</span>
+      <input
+        id="startSearch"
+        placeholder="Buscar aplicaciones, configuraciones y documentos"
+      >
+    </div>
+
+    <div class="start-top">
+
+      <h3>Anclado</h3>
+
+      <button id="showAllApps">
+        Mostrar todo ›
+      </button>
+
+    </div>
+
+    <div id="startApps" class="start-app-grid"></div>
+
+
+    <div class="start-section-title">
+      Recientes
+    </div>
+
+    <div id="recentApps" class="recent-grid"></div>
+
+
+    <div class="start-bottom">
+
+      <div class="user-profile">
+
+        <div class="avatar">
+          🧑‍🌾
+        </div>
+
+        <div>
+          <strong>Aldeano</strong>
+          <small>AidoPC</small>
+        </div>
+
+      </div>
+
+      <button
+        class="power-button"
+        id="powerButton"
+        title="Apagar"
+      >
+        ⏻
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- BUSCADOR -->
+  <section id="searchPanel" class="floating-panel hidden">
+
+    <div class="search-panel-header">
+      <strong>Buscar en AidoOS</strong>
+      <button data-close-panel="searchPanel">×</button>
+    </div>
+
+    <input
+      id="systemSearch"
+      class="big-search"
+      placeholder="Busca una app o pregunta algo..."
+    >
+
+    <div id="searchResult" class="search-result">
+
+      <div class="search-hint">
+        💡 Escribe algo y pulsa Enter.
+        También puedes pedir un dato curioso.
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- WIDGETS -->
+  <section id="widgetPanel" class="floating-panel widgets-panel hidden">
+
+    <div class="panel-title">
+      <strong>Widgets</strong>
+
+      <button data-close-panel="widgetPanel">
+        ×
+      </button>
+    </div>
+
+    <div class="widget-grid">
+
+      <div class="big-widget">
+        <span>🕒</span>
+        <strong id="widgetClock">00:00</strong>
+        <small id="widgetDate">AidoPC</small>
+      </div>
+
+      <div class="big-widget">
+        <span>☁️</span>
+        <strong>Conectado</strong>
+        <small>Internet disponible</small>
+      </div>
+
+      <div class="big-widget">
+        <span>💾</span>
+        <strong>1 TB</strong>
+        <small>Almacenamiento AidoPC</small>
+      </div>
+
+      <div class="big-widget">
+        <span>🤖</span>
+        <strong>AidoIA</strong>
+        <small>Lista para ayudarte</small>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ACCESOS RÁPIDOS -->
+  <section id="quickPanel" class="floating-panel quick-panel hidden">
+
+    <div class="quick-header">
+
+      <div>
+        <strong>AidoPC</strong>
+        <small>Ajustes rápidos</small>
+      </div>
+
+      <button data-close-panel="quickPanel">
+        ×
+      </button>
+
+    </div>
+
+
+    <div class="quick-grid">
+
+      <button class="quick-toggle active">
+        <span>📶</span>
+        <b>Wi-Fi</b>
+        <small>Conectado</small>
+      </button>
+
+      <button class="quick-toggle">
+        <span>🔵</span>
+        <b>Bluetooth</b>
+        <small>Activado</small>
+      </button>
+
+      <button class="quick-toggle">
+        <span>🔋</span>
+        <b>Ahorro</b>
+        <small>Desactivado</small>
+      </button>
+
+      <button class="quick-toggle">
+        <span>✈️</span>
+        <b>Modo avión</b>
+        <small>Desactivado</small>
+      </button>
+
+      <button class="quick-toggle">
+        <span>♿</span>
+        <b>Accesibilidad</b>
+        <small>Más opciones</small>
+      </button>
+
+      <button class="quick-toggle">
+        <span>🔔</span>
+        <b>Notificaciones</b>
+        <small>Activadas</small>
+      </button>
+
+    </div>
+
+
+    <div class="slider-row">
+
+      <span>☀️</span>
+
+      <input
+        type="range"
+        min="10"
+        max="100"
+        value="75"
+        id="brightnessSlider"
+      >
+
+    </div>
+
+
+    <div class="slider-row">
+
+      <span>🔊</span>
+
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value="55"
+        id="volumeSlider"
+      >
+
+    </div>
+
+
+    <div class="quick-footer">
+
+      <span>🔋 66%</span>
+
+      <button
+        data-open-app="settings"
+        title="Configuración"
+      >
+        ⚙️
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- NOTIFICACIONES -->
+  <section id="notificationPanel" class="floating-panel notification-panel hidden">
+
+    <div class="panel-title">
+
+      <strong>Notificaciones</strong>
+
+      <button data-close-panel="notificationPanel">
+        ×
+      </button>
+
+    </div>
+
+    <div id="notifications">
+
+      <div class="notification">
+
+        <span class="notification-icon">🤖</span>
+
+        <div>
+          <strong>AidoIA</strong>
+          <p>AidoIA está lista para ayudarte.</p>
+        </div>
+
+      </div>
+
+      <div class="notification">
+
+        <span class="notification-icon">💻</span>
+
+        <div>
+          <strong>AidoOS</strong>
+          <p>Bienvenido a tu AidoPC.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- CAMBIO DE ESCRITORIO -->
+  <section id="desktopSwitcher" class="floating-panel desktop-switcher hidden">
+
+    <div class="panel-title">
+
+      <strong>Escritorios</strong>
+
+      <button data-close-panel="desktopSwitcher">
+        ×
+      </button>
+
+    </div>
+
+    <div class="desktop-list">
+
+      <button data-desktop="1">
+        <span>🖥️</span>
+        Escritorio 1
+      </button>
+
+      <button data-desktop="2">
+        <span>🖥️</span>
+        Escritorio 2
+      </button>
+
+      <button data-desktop="3">
+        <span>🖥️</span>
+        Escritorio 3
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- BARRA DE TAREAS -->
+  <footer id="taskbar">
+
+    <div class="taskbar-left">
+
+      <button
+        class="taskbar-button"
+        id="startButton"
+        title="Inicio"
+      >
+        ◉
+      </button>
+
+      <button
+        class="taskbar-button search-button"
+        id="taskSearchButton"
+      >
+        🔎
+        <span>Buscar</span>
+      </button>
+
+    </div>
+
+
+    <div
+      id="taskTabs"
+      class="task-tabs"
+    ></div>
+
+
+    <div class="taskbar-center">
+
+      <button
+        class="taskbar-button"
+        id="widgetsButton"
+        title="Widgets"
+      >
+        ◫
+      </button>
+
+      <button
+        class="taskbar-button"
+        data-open-app="aidoia"
+        title="AidoIA"
+      >
+        🤖
+      </button>
+
+      <button
+        class="taskbar-button"
+        data-open-app="store"
+        title="AidoStore"
+      >
+        🛍️
+      </button>
+
+      <button
+        class="taskbar-button"
+        data-open-app="browser"
+        title="Aido NavegerPRO"
+      >
+        🌐
+      </button>
+
+    </div>
+
+
+    <div class="taskbar-right">
+
+      <button
+        class="tray-button"
+        id="desktopButton"
+        title="Escritorios"
+      >
+        ▣
+      </button>
+
+      <button
+        class="tray-button"
+        id="networkButton"
+      >
+        📶
+      </button>
+
+      <button
+        class="tray-button"
+        id="volumeButton"
+      >
+        🔊
+      </button>
+
+      <button
+        class="tray-button"
+        id="batteryButton"
+      >
+        🔋
+      </button>
+
+      <button
+        class="clock-area"
+        id="clockButton"
+      >
+        <span id="taskClock">00:00</span>
+        <span id="taskDate">05/10/2026</span>
+      </button>
+
+    </div>
+
+  </footer>
+
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
