@@ -5425,24 +5425,61 @@ function renderMusic() {
       </div>
 
       <div class="app-subtitle">
-        Escucha archivos de música que tengas en tu PC.
+        Tu reproductor musical de AidoOS.
       </div>
-
 
       <div
         class="settings-card"
-        style="
-          margin-top:18px;
-        "
+        style="margin-top:18px;"
       >
 
         <strong>
-          Biblioteca musical
+          🎸 Aido Rebellion — 60 min
         </strong>
 
         <p>
-          Selecciona archivos de audio
-          para reproducirlos.
+          Tema original preparado para AidoOS.
+          Cuando el archivo esté en la carpeta
+          <b>music/</b> de GitHub, aparecerá listo para reproducir.
+        </p>
+
+        <audio
+          id="aidoRebellionPlayer"
+          controls
+          preload="metadata"
+          style="width:100%;margin-top:10px;"
+        >
+          <source
+            src="music/Aido_Rebellion_60min.mp3"
+            type="audio/mpeg"
+          >
+          Tu navegador no puede reproducir este audio.
+        </audio>
+
+        <div
+          id="aidoRebellionStatus"
+          style="
+            margin-top:8px;
+            font-size:12px;
+            color:#aeb4bd;
+          "
+        >
+          🎧 Buscando el archivo de Aido Rebellion…
+        </div>
+
+      </div>
+
+      <div
+        class="settings-card"
+        style="margin-top:14px;"
+      >
+
+        <strong>
+          📂 Tu biblioteca
+        </strong>
+
+        <p>
+          También puedes cargar canciones desde tu PC.
         </p>
 
         <input
@@ -5453,7 +5490,6 @@ function renderMusic() {
         >
 
       </div>
-
 
       <div
         id="musicList"
@@ -5476,19 +5512,47 @@ function wireMusic(
       "#musicFiles"
     );
 
-
   const list =
     content.querySelector(
       "#musicList"
     );
 
+  const player =
+    content.querySelector(
+      "#aidoRebellionPlayer"
+    );
 
-  if (
-    !input ||
-    !list
-  )
+  const status =
+    content.querySelector(
+      "#aidoRebellionStatus"
+    );
+
+  if (player && status) {
+
+    player.addEventListener(
+      "error",
+      () => {
+
+        status.textContent =
+          "📁 Falta subir music/Aido_Rebellion_60min.mp3 al repositorio.";
+
+      }
+    );
+
+    player.addEventListener(
+      "loadedmetadata",
+      () => {
+
+        status.textContent =
+          "✅ Aido Rebellion está lista para reproducirse.";
+
+      }
+    );
+
+  }
+
+  if (!input || !list)
     return;
-
 
   input.addEventListener(
     "change",
@@ -5496,7 +5560,6 @@ function wireMusic(
 
       list.innerHTML =
         "";
-
 
       [
         ...input.files
@@ -5509,16 +5572,13 @@ function wireMusic(
               file
             );
 
-
           const row =
             document.createElement(
               "div"
             );
 
-
           row.className =
             "music-item";
-
 
           row.innerHTML = `
 
@@ -5536,25 +5596,16 @@ function wireMusic(
                 ${escapeHTML(file.name)}
               </strong>
 
-
               <audio
                 controls
-                style="
-                  width:100%;
-                  margin-top:7px;
-                "
+                style="width:100%;margin-top:7px;"
               >
-
-                <source
-                  src="${url}"
-                >
-
+                <source src="${url}">
               </audio>
 
             </div>
 
           `;
-
 
           list.appendChild(
             row
